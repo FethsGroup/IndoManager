@@ -4,7 +4,6 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>IndoManager — Simulasi Minimarket Indonesia</title>
-  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
   <style>
     * { box-sizing: border-box; margin: 0; padding: 0; font-family: 'Inter', sans-serif; }
@@ -33,22 +32,18 @@
     .speed-btn.active { background: #00B14F; color: white; border-color: #00B14F; }
     .item-row { display: flex; justify-content: space-between; align-items: center; padding: 10px 0; border-bottom: 1px solid #F5F5F5; }
     .btn { background: #00B14F; color: white; border: none; padding: 8px 14px; border-radius: 8px; font-weight: 600; cursor: pointer; font-size: 13px; }
-    .btn-sm { padding: 4px 8px; font-size: 12px; border-radius: 6px; }
+    .btn-sm { padding: 6px 12px; font-size: 12px; border-radius: 6px; }
     .btn-danger { background: #E63946; }
-    .btn-secondary { background: #F5F5F5; color: #1A1A1A; border: 1px solid #E5E5E5; }
     .btn:disabled { opacity: 0.5; cursor: not-allowed; }
-    #map { height: 300px; width: 100%; border-radius: 12px; margin-bottom: 16px; z-index: 1; }
     .log-list { max-height: 200px; overflow-y: auto; font-size: 12px; }
     .log-item { padding: 6px 0; border-bottom: 1px solid #F5F5F5; color: #8A8A8A; }
     .log-item.good { color: #00880A; }
     .log-item.bad { color: #E63946; }
-    
-    /* Price Adjuster Controls */
     .price-control { display: flex; align-items: center; gap: 4px; }
-    .price-control input { width: 85px; padding: 6px; border: 1px solid #E5E5E5; border-radius: 6px; text-align: center; font-weight: 600; }
-    .price-btn { width: 28px; height: 28px; background: #E8F7EE; color: #00880A; border: 1px solid #00B14F; border-radius: 6px; font-weight: bold; cursor: pointer; display: flex; align-items: center; justify-content: center; }
-    
-    .locked-card { opacity: 0.6; background: #F5F5F5; text-align: center; padding: 30px 16px; border-radius: 12px; }
+    .price-control input { width: 90px; padding: 6px; border: 1px solid #E5E5E5; border-radius: 6px; text-align: center; font-weight: 600; }
+    .price-btn { width: 28px; height: 28px; background: #E8F7EE; color: #00880A; border: 1px solid #00B14F; border-radius: 6px; font-weight: bold; cursor: pointer; display: flex; align-items: center; justify-content: center; user-select: none; }
+    .locked-card { background: #FFF3CD; color: #856404; border: 1px solid #FFEEBA; text-align: center; padding: 20px; border-radius: 12px; margin-top: 10px; font-size: 13px; }
+    .tag { background: #E8F7EE; color: #00880A; font-size: 11px; padding: 2px 6px; border-radius: 4px; font-weight: bold; }
   </style>
 </head>
 <body>
@@ -57,8 +52,8 @@
       <div class="profile-info">
         <div class="avatar">M</div>
         <div>
-          <div style="font-weight: 600; font-size: 14px;">Selamat Datang, Manager</div>
-          <div style="font-size: 12px; color: #8A8A8A;" id="time-display">08:00:00 WIB | Hari 1</div>
+          <div style="font-weight: 600; font-size: 14px;">Manager Minimarket</div>
+          <div style="font-size: 12px; color: #8A8A8A;" id="time-display">08:00 WIB | Hari 1</div>
         </div>
       </div>
       <button class="btn" onclick="nextDay()" style="padding: 6px 12px;">›› Skip Hari</button>
@@ -92,8 +87,8 @@
         <button class="action-btn" onclick="switchTab('karyawan')">
           <svg viewBox="0 0 24 24"><path d="M16 11c1.66 0 2.99-1.34 2.99-3S17.66 5 16 5c-1.66 0-3 1.34-3 3zm-8 0c1.66 0 2.99-1.34 2.99-3S9.66 5 8 5C6.34 5 5 6.34 5 8s1.34 3 3 3zm0 2c-2.33 0-7 1.17-7 3.5V19h14v-2.5c0-2.33-4.67-3.5-7-3.5z"/></svg>Karyawan
         </button>
-        <button class="action-btn" onclick="switchTab('peta')">
-          <svg viewBox="0 0 24 24"><path d="M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7zm0 9.5c-1.38 0-2.5-1.12-2.5-2.5s1.12-2.5 2.5-2.5 2.5 1.12 2.5 2.5-1.12 2.5-2.5 2.5z"/></svg>Peta
+        <button class="action-btn" onclick="switchTab('cabang')">
+          <svg viewBox="0 0 24 24"><path d="M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7zm0 9.5c-1.38 0-2.5-1.12-2.5-2.5s1.12-2.5 2.5-2.5 2.5 1.12 2.5 2.5-1.12 2.5-2.5 2.5z"/></svg>Cabang
         </button>
         <button class="action-btn" onclick="switchTab('review')">
           <svg viewBox="0 0 24 24"><path d="M20 2H4c-1.1 0-1.99.9-1.99 2L2 22l4-4h14c1.1 0 2-.9 2-2V4c0-1.1-.9-2-2-2z"/></svg>Netizen
@@ -109,15 +104,15 @@
       </div>
 
       <div class="card">
-        <h4 style="margin-bottom: 8px;">Log Aktivitas</h4>
+        <h4 style="margin-bottom: 8px;">Log Aktivitas Toko</h4>
         <div class="log-list" id="activity-log"></div>
       </div>
     </div>
 
-    <!-- TOKO -->
+    <!-- TOKO & STOK -->
     <div id="tab-toko" class="tab-content">
       <h3>Stok & Dynamic Pricing</h3>
-      <p style="font-size: 12px; color: #8A8A8A; margin-bottom: 12px;">Gunakan tombol -/+ atau ketik angka untuk mengubah harga jual.</p>
+      <p style="font-size: 12px; color: #8A8A8A; margin-bottom: 12px;">Atur harga jual dan beli stok produk untuk toko Anda.</p>
       <div id="product-list"></div>
     </div>
 
@@ -128,11 +123,10 @@
       <div id="employee-list"></div>
     </div>
 
-    <!-- PETA -->
-    <div id="tab-peta" class="tab-content">
-      <h3>Peta Cabang Indonesia</h3>
-      <p style="font-size: 12px; color: #8A8A8A; margin-bottom: 12px;">Buka cabang di berbagai kota untuk meningkatkan pendapatan pasif.</p>
-      <div id="map"></div>
+    <!-- BUKA CABANG INDONESIA -->
+    <div id="tab-cabang" class="tab-content">
+      <h3>Buka Cabang Daerah Indonesia</h3>
+      <p style="font-size: 12px; color: #8A8A8A; margin-bottom: 12px;">Ekspansi toko ke berbagai kota untuk pendapatan pasif harian.</p>
       <div id="city-list"></div>
     </div>
 
@@ -142,12 +136,13 @@
       <div class="log-list" id="review-list" style="max-height: 400px;"></div>
     </div>
 
-    <!-- FRANCHISE & UPGRADE -->
+    <!-- UPGRADE & FRANCHISE -->
     <div id="tab-upgrade" class="tab-content">
-      <h3>Upgrade & Franchise</h3>
+      <h3>Upgrade & Upgrade Toko</h3>
       <div id="upgrade-list"></div>
       <hr style="margin: 16px 0; border: none; border-top: 1px solid #E5E5E5;">
       <h3>Kemitraan Franchise</h3>
+      <p style="font-size: 12px; color: #8A8A8A; margin-bottom: 8px;">Buka jaringan waralaba otomatis.</p>
       <div id="franchise-section"></div>
     </div>
 
@@ -159,8 +154,8 @@
       <button class="nav-item" onclick="switchTab('toko')">
         <svg viewBox="0 0 24 24"><path d="M20 4H4v2h16V4zm1 10v-2l-1-5H4l-1 5v2h1v6h10v-6h4v6h2v-6h1z"/></svg>Toko
       </button>
-      <button class="nav-item" onclick="switchTab('peta')">
-        <svg viewBox="0 0 24 24"><path d="M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7z"/></svg>Peta
+      <button class="nav-item" onclick="switchTab('cabang')">
+        <svg viewBox="0 0 24 24"><path d="M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7z"/></svg>Cabang
       </button>
       <button class="nav-item" onclick="switchTab('karyawan')">
         <svg viewBox="0 0 24 24"><path d="M16 11c1.66 0 2.99-1.34 2.99-3S17.66 5 16 5c-1.66 0-3 1.34-3 3zm-8 0c1.66 0 2.99-1.34 2.99-3S9.66 5 8 5z"/></svg>Karyawan
@@ -171,11 +166,10 @@
     </nav>
   </div>
 
-  <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
   <script>
     var state = {
       balance: 5000000, level: 1, reputation: 50, day: 1, 
-      hour: 8, minute: 0, second: 0,
+      hour: 8, minute: 0,
       todayBuyers: 0, todaySales: 0, speed: 1,
       products: [
         { id: 1, name: "Aqua 600ml", cost: 2500, price: 4000, basePrice: 4000, stock: 100 },
@@ -183,31 +177,33 @@
         { id: 3, name: "Taro Net", cost: 5000, price: 8000, basePrice: 8000, stock: 50 },
         { id: 4, name: "Chitato Sapi", cost: 8000, price: 12000, basePrice: 12000, stock: 40 },
         { id: 5, name: "Ultra Milk 250ml", cost: 5000, price: 7500, basePrice: 7500, stock: 80 },
-        { id: 6, name: "Sampoerna Mild", cost: 25000, price: 30000, basePrice: 30000, stock: 30 }
+        { id: 6, name: "Rokok Sampoerna", cost: 25000, price: 30000, basePrice: 30000, stock: 30 }
       ],
       employees: [],
       cities: [
-        { id: 'jkt', name: "Jakarta", lat: -6.2088, lng: 106.8456, cost: 5000000, mult: 1.5, owned: true },
-        { id: 'sby', name: "Surabaya", lat: -7.2575, lng: 112.7521, cost: 4000000, mult: 1.3, owned: false },
-        { id: 'bdg', name: "Bandung", lat: -6.9175, lng: 107.6191, cost: 3500000, mult: 1.2, owned: false },
-        { id: 'mdn', name: "Medan", lat: 3.5952, lng: 98.6722, cost: 3000000, mult: 1.1, owned: false },
-        { id: 'mks', name: "Makassar", lat: -5.1477, lng: 119.4327, cost: 3000000, mult: 1.1, owned: false }
+        { id: 'jkt', name: "Jakarta", region: "DKI Jakarta", cost: 5000000, income: 450000, owned: true },
+        { id: 'sby', name: "Surabaya", region: "Jawa Timur", cost: 4000000, income: 350000, owned: false },
+        { id: 'bdg', name: "Bandung", region: "Jawa Barat", cost: 3500000, income: 300000, owned: false },
+        { id: 'mdn', name: "Medan", region: "Sumatera Utara", cost: 3000000, income: 250000, owned: false },
+        { id: 'mks', name: "Makassar", region: "Sulawesi Selatan", cost: 3000000, income: 250000, owned: false },
+        { id: 'smg', name: "Semarang", region: "Jawa Tengah", cost: 2800000, income: 220000, owned: false },
+        { id: 'dps', name: "Denpasar", region: "Bali", cost: 4500000, income: 400000, owned: false }
       ],
       upgrades: [
-        { id: 'rak', name: "Rak Tambahan (+20% Stok Cap)", cost: 2000000, owned: false },
-        { id: 'kasir', name: "Kasir Cepat (+15% Income)", cost: 3000000, owned: false }
+        { id: 'rak', name: "Rak Tambahan (+Peluang Stok)", cost: 2000000, owned: false },
+        { id: 'kasir', name: "Kasir Otomatis (+Speed Pembayaran)", cost: 3000000, owned: false }
       ],
       franchises: [
-        { id: 'f1', name: "Franchise Tier 1 (Kios Mini)", cost: 10000000, royalty: 300000, owned: false },
-        { id: 'f2', name: "Franchise Tier 2 (Super Store)", cost: 25000000, royalty: 800000, owned: false }
+        { id: 'f1', name: "Franchise Kios Mini", cost: 15000000, royalty: 500000, owned: false },
+        { id: 'f2', name: "Franchise Super Store", cost: 35000000, royalty: 1200000, owned: false }
       ],
-      logs: [], reviews: [], map: null, timerId: null
+      logs: [], reviews: [], timerId: null
     };
 
     var customerComments = {
-      expensive: ["Mahal amat buset!", "Mending beli di sebelah lah", "Harga gak ngotak njir"],
-      outOfStock: ["Yah stok habis, rugi dong", "Toko segini gede barang kosong", "Kecewa bgt gaada stok"],
-      success: ["Mantap pelayanannya fast response!", "Langganan nih di sini", "Adem, barang lengkap!"]
+      expensive: ["Mahal banget woi!", "Mending beli di toko sebelah", "Harga tidak masuk akal!"],
+      outOfStock: ["Yah barangnya habis", "Toko segini gede persediaan kosong", "Kecewa stok gak ada"],
+      success: ["Mantap pelayanannya cepat!", "Langganan nih di sini", "Toko bersih, barang lengkap!"]
     };
 
     function formatRp(val) { return "Rp " + val.toLocaleString('id-ID'); }
@@ -215,33 +211,30 @@
     function init() {
       loadGame();
       renderAll();
-      initMap();
       startGameloop();
     }
 
-    // Jam Real-Time per Detik
     function startGameloop() {
       if (state.timerId) clearInterval(state.timerId);
       if (state.speed === 0) return;
       
+      // 1 detik interval = 1 menit realtime game
       var interval = 1000 / state.speed;
       state.timerId = setInterval(function() {
-        // Setiap detik bertambah 5 detik game agar tidak terlalu lambat
-        state.second += 5;
-        if (state.second >= 60) {
-          state.second = 0;
-          state.minute += 1;
-          if (state.minute >= 60) {
-            state.minute = 0;
-            state.hour += 1;
-            if (state.hour >= 22) { 
-              nextDay(); 
-              state.hour = 8; 
-            }
+        state.minute += 1;
+        if (state.minute >= 60) {
+          state.minute = 0;
+          state.hour += 1;
+          if (state.hour >= 22) { 
+            nextDay(); 
+            state.hour = 8; 
           }
-          // Pelanggan datang secara acak tiap menit berganti
-          if (Math.random() < 0.4) spawnCustomer();
         }
+        
+        if (Math.random() < 0.4) {
+          spawnCustomer();
+        }
+        
         renderHeader();
       }, interval);
     }
@@ -252,7 +245,7 @@
       var priceRatio = prod.price / prod.basePrice;
 
       if (priceRatio > 1.3 && Math.random() < 0.7) {
-        addReview(getRandomComment('expensive') + " (" + prod.name + " kemahalan)", 'bad');
+        addReview(getRandomComment('expensive') + " (" + prod.name + ")", 'bad');
         state.reputation = Math.max(0, state.reputation - 0.5);
         return;
       }
@@ -263,29 +256,34 @@
         state.balance += total;
         state.todaySales += total;
         state.todayBuyers++;
-        addLog("Pembeli membeli " + prod.name + " " + qty + "x (" + formatRp(total) + ")", 'good');
+        addLog("Pembeli membeli " + prod.name + " (" + qty + "x) - " + formatRp(total), 'good');
         if (Math.random() < 0.2) addReview(getRandomComment('success'), 'good');
       } else {
         addReview(getRandomComment('outOfStock') + " (" + prod.name + ")", 'bad');
         state.reputation = Math.max(0, state.reputation - 0.5);
       }
-      renderAll();
+      
+      var stockElem = document.getElementById('stock-' + prod.id);
+      if(stockElem) stockElem.innerText = prod.stock;
+      
+      renderDashboardStats();
     }
 
     function getRandomComment(type) {
-      var arr = customerComments[type];
-      return arr[Math.floor(Math.random() * arr.length)];
+      return customerComments[type][Math.floor(Math.random() * customerComments[type].length)];
     }
 
     function addLog(msg, type) {
       state.logs.unshift({ msg: msg, type: type });
-      if (state.logs.length > 30) state.logs.pop();
+      if (state.logs.length > 20) state.logs.pop();
+      renderLogs();
     }
 
     function addReview(msg, type) {
       var timeStr = (state.hour < 10 ? '0' : '') + state.hour + ":" + (state.minute < 10 ? '0' : '') + state.minute;
       state.reviews.unshift({ msg: msg, type: type, time: timeStr });
-      if (state.reviews.length > 30) state.reviews.pop();
+      if (state.reviews.length > 20) state.reviews.pop();
+      renderReviews();
     }
 
     function setSpeed(sp, btnElement) {
@@ -297,35 +295,38 @@
 
     function nextDay() {
       state.day++;
-      var ownedBranches = state.cities.filter(c => c.owned).length;
-      var passiveIncome = ownedBranches * 200000;
+      var ownedBranches = state.cities.filter(c => c.owned);
+      var passiveIncome = ownedBranches.reduce((acc, c) => acc + c.income, 0);
       var totalSalaries = state.employees.reduce((acc, e) => acc + e.salary, 0);
 
       state.franchises.forEach(f => { if (f.owned) passiveIncome += f.royalty; });
-      state.balance += (passiveIncome - totalSalaries);
+      
+      var netIncome = passiveIncome - totalSalaries;
+      state.balance += netIncome;
 
       if (state.balance > state.level * 10000000) state.level++;
 
       state.todayBuyers = 0; 
       state.todaySales = 0;
-      addLog("Hari " + state.day + " dimulai. Gaji dibayar: " + formatRp(totalSalaries), 'good');
+      addLog("Hari " + state.day + " dimulai. Pendapatan pasif: " + formatRp(passiveIncome) + " | Gaji: " + formatRp(totalSalaries), 'good');
       saveGame();
-      renderAll();
+      renderDashboardStats();
     }
 
     function renderHeader() {
       var h = state.hour < 10 ? '0' + state.hour : state.hour;
       var m = state.minute < 10 ? '0' + state.minute : state.minute;
-      var s = state.second < 10 ? '0' + state.second : state.second;
-      document.getElementById('time-display').innerText = h + ":" + m + ":" + s + " WIB | Hari " + state.day;
+      document.getElementById('time-display').innerText = h + ":" + m + " WIB | Hari " + state.day;
     }
 
-    // Fungsi Pengaturan Harga (Tambah & Kurang)
+    // FUNGSIONALITAS RUBAH HARGA
     function changePrice(id, amount) {
       var prod = state.products.find(p => p.id === id);
       if (prod) {
         prod.price = Math.max(500, prod.price + amount);
-        renderAll();
+        var inputElem = document.getElementById('input-price-' + id);
+        if(inputElem) inputElem.value = prod.price;
+        saveGame();
       }
     }
 
@@ -335,32 +336,83 @@
         var newPrice = parseInt(val);
         if (!isNaN(newPrice) && newPrice > 0) {
           prod.price = newPrice;
+        } else {
+          document.getElementById('input-price-' + id).value = prod.price;
+        }
+        saveGame();
+      }
+    }
+
+    // FUNGSIONALITAS TAMBAH STOK
+    function buyStock(id) {
+      var prod = state.products.find(p => p.id === id);
+      if (prod) {
+        var totalCost = prod.cost * 10;
+        if (state.balance >= totalCost) {
+          state.balance -= totalCost; 
+          prod.stock += 10;
+          
+          var stockElem = document.getElementById('stock-' + id);
+          if(stockElem) stockElem.innerText = prod.stock;
+          
+          addLog("Membeli stok 10x " + prod.name + " (" + formatRp(totalCost) + ")", 'good');
+          renderDashboardStats();
+          saveGame();
+        } else {
+          alert("Saldo Anda tidak mencukupi untuk membeli stok ini!");
         }
       }
     }
 
-    function renderAll() {
-      renderHeader();
+    function buyCity(id) {
+      var c = state.cities.find(x => x.id === id);
+      if (!c) return;
+      if (c.owned) return alert("Cabang di kota ini sudah aktif!");
+      
+      if (state.balance >= c.cost) {
+        state.balance -= c.cost; 
+        c.owned = true; 
+        addLog("Berhasil membuka cabang baru di " + c.name, 'good');
+        renderCities();
+        renderUpgrades();
+        renderDashboardStats(); 
+        saveGame();
+        alert("Selamat! Cabang " + c.name + " (" + c.region + ") telah resmi dibuka!");
+      } else {
+        alert("Saldo Anda kurang untuk membuka cabang di " + c.name);
+      }
+    }
+
+    function renderDashboardStats() {
       document.getElementById('balance').innerText = formatRp(state.balance);
       document.getElementById('level').innerText = state.level;
       document.getElementById('reputation').innerText = Math.floor(state.reputation);
       document.getElementById('branch-count').innerText = state.cities.filter(c => c.owned).length;
       document.getElementById('today-buyers').innerText = state.todayBuyers;
       document.getElementById('today-sales').innerText = formatRp(state.todaySales);
+    }
 
-      // Products (Lengkap dengan Tombol +/- dan Input)
+    function renderLogs() {
+      document.getElementById('activity-log').innerHTML = state.logs.map(l => `<div class="log-item ${l.type}">${l.msg}</div>`).join('');
+    }
+
+    function renderReviews() {
+      document.getElementById('review-list').innerHTML = state.reviews.map(r => `<div class="log-item ${r.type}"><b>[${r.time}]</b> "${r.msg}"</div>`).join('');
+    }
+
+    function renderProducts() {
       var pList = document.getElementById('product-list');
       if (pList) {
         pList.innerHTML = state.products.map(p => `
           <div class="card item-row">
             <div>
               <b>${p.name}</b><br>
-              <small style="color:#8A8A8A">Stok: ${p.stock} | Modal: ${formatRp(p.cost)}</small>
+              <small style="color:#8A8A8A">Stok: <b id="stock-${p.id}">${p.stock}</b> | Modal: ${formatRp(p.cost)}</small>
             </div>
             <div style="display:flex; flex-direction:column; align-items:flex-end; gap:6px;">
               <div class="price-control">
                 <button class="price-btn" onclick="changePrice(${p.id}, -500)">-</button>
-                <input type="number" value="${p.price}" onchange="updatePriceInput(${p.id}, this.value)">
+                <input type="number" id="input-price-${p.id}" value="${p.price}" onchange="updatePriceInput(${p.id}, this.value)">
                 <button class="price-btn" onclick="changePrice(${p.id}, 500)">+</button>
               </div>
               <button class="btn btn-sm" onclick="buyStock(${p.id})">+10 Stok (${formatRp(p.cost * 10)})</button>
@@ -368,13 +420,31 @@
           </div>
         `).join('');
       }
+    }
 
-      // Employees
+    function renderCities() {
+      var cList = document.getElementById('city-list');
+      if (cList) {
+        cList.innerHTML = state.cities.map(c => `
+          <div class="card item-row">
+            <div>
+              <b>${c.name}</b> <span class="tag">${c.region}</span><br>
+              <small style="color:#8A8A8A">Biaya: ${formatRp(c.cost)} | Hasil: +${formatRp(c.income)}/hari</small>
+            </div>
+            <button class="btn btn-sm" ${c.owned ? 'disabled' : ''} onclick="buyCity('${c.id}')">
+              ${c.owned ? 'Aktif' : 'Buka Cabang'}
+            </button>
+          </div>
+        `).join('');
+      }
+    }
+
+    function renderEmployees() {
       var eList = document.getElementById('employee-list');
       if (eList) {
         eList.innerHTML = state.employees.map((e, idx) => `
           <div class="card item-row">
-            <div><b>${e.name}</b> (${e.type})<br><small style="color:#8A8A8A">Gaji: ${formatRp(e.salary)}/hari | Lvl ${e.level}</small></div>
+            <div><b>${e.name}</b> (${e.type})<br><small style="color:#8A8A8A">Gaji: ${formatRp(e.salary)}/hari | Level ${e.level}</small></div>
             <div style="display:flex; gap:6px;">
               <button class="btn btn-sm" onclick="upgradeEmployee(${idx})">Upgrade</button>
               <button class="btn btn-sm btn-danger" onclick="fireEmployee(${idx})">Pecat</button>
@@ -382,12 +452,9 @@
           </div>
         `).join('');
       }
+    }
 
-      // Logs & Reviews
-      document.getElementById('activity-log').innerHTML = state.logs.map(l => `<div class="log-item ${l.type}">${l.msg}</div>`).join('');
-      document.getElementById('review-list').innerHTML = state.reviews.map(r => `<div class="log-item ${r.type}"><b>[${r.time}]</b> "${r.msg}"</div>`).join('');
-
-      // Upgrades & Franchise
+    function renderUpgrades() {
       var uList = document.getElementById('upgrade-list');
       if (uList) {
         uList.innerHTML = state.upgrades.map(u => `
@@ -399,9 +466,16 @@
       }
 
       var fList = document.getElementById('franchise-section');
+      var ownedBranchesCount = state.cities.filter(c => c.owned).length;
+      
       if (fList) {
-        if (state.level < 3) {
-          fList.innerHTML = `<div class="locked-card">Fitur Franchise Terkunci.<br>Capai <b>Level 3</b> untuk membuka fitur kemitraan.</div>`;
+        if (ownedBranchesCount < 5) {
+          fList.innerHTML = `
+            <div class="locked-card">
+              <b>Fitur Franchise Terkunci!</b><br>
+              Syarat minimal: Memiliki <b>5 Cabang Kota</b>.<br>
+              (Saat ini Anda baru memiliki <b>${ownedBranchesCount}/5</b> Cabang)
+            </div>`;
         } else {
           fList.innerHTML = state.franchises.map(f => `
             <div class="card item-row">
@@ -413,51 +487,75 @@
       }
     }
 
-    function buyStock(id) {
-      var prod = state.products.find(p => p.id === id);
-      var cost = prod.cost * 10;
-      if (state.balance >= cost) {
-        state.balance -= cost; prod.stock += 10; renderAll();
-      } else alert("Saldo tidak cukup!");
+    function renderAll() {
+      renderHeader();
+      renderDashboardStats();
+      renderProducts();
+      renderCities();
+      renderEmployees();
+      renderLogs();
+      renderReviews();
+      renderUpgrades();
     }
 
     function hireEmployee() {
       if (state.balance < 500000) return alert("Saldo tidak cukup!");
       state.balance -= 500000;
-      var names = ["Budi", "Siti", "Andi", "Rina", "Dedi", "Lina"];
+      var names = ["Budi", "Siti", "Andi", "Rina", "Dedi", "Lina", "Eko", "Maya"];
       var types = ["Kasir", "Pramuniaga", "Supervisor"];
       var type = types[Math.floor(Math.random() * types.length)];
       state.employees.push({ name: names[Math.floor(Math.random() * names.length)], type: type, salary: 150000, level: 1 });
-      renderAll();
+      renderEmployees();
+      renderDashboardStats();
+      saveGame();
     }
 
-    function fireEmployee(idx) { state.employees.splice(idx, 1); renderAll(); }
+    function fireEmployee(idx) { 
+      state.employees.splice(idx, 1); 
+      renderEmployees(); 
+      saveGame();
+    }
 
     function upgradeEmployee(idx) {
       var emp = state.employees[idx];
       if (state.balance >= 300000) {
-        state.balance -= 300000; emp.level++; emp.salary += 50000; renderAll();
+        state.balance -= 300000; 
+        emp.level++; 
+        emp.salary += 50000; 
+        renderEmployees();
+        renderDashboardStats();
+        saveGame();
       } else alert("Saldo kurang!");
     }
 
     function buyUpgrade(id) {
       var up = state.upgrades.find(u => u.id === id);
       if (state.balance >= up.cost) {
-        state.balance -= up.cost; up.owned = true; renderAll();
-      }
+        state.balance -= up.cost; 
+        up.owned = true; 
+        renderUpgrades();
+        renderDashboardStats();
+        saveGame();
+      } else alert("Saldo kurang!");
     }
 
     function buyFranchise(id) {
       var f = state.franchises.find(x => x.id === id);
       if (state.balance >= f.cost) {
-        state.balance -= f.cost; f.owned = true; renderAll();
-      }
+        state.balance -= f.cost; 
+        f.owned = true; 
+        renderUpgrades();
+        renderDashboardStats();
+        saveGame();
+      } else alert("Saldo kurang!");
     }
 
     function switchTab(tabId) {
       document.querySelectorAll('.tab-content').forEach(t => t.classList.remove('active'));
       document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
-      document.getElementById('tab-' + tabId).classList.add('active');
+      
+      var targetTab = document.getElementById('tab-' + tabId);
+      if(targetTab) targetTab.classList.add('active');
       
       var navBtns = document.querySelectorAll('.nav-item');
       navBtns.forEach(btn => {
@@ -465,33 +563,6 @@
           btn.classList.add('active');
         }
       });
-
-      if (tabId === 'peta' && state.map) {
-        setTimeout(function() { state.map.invalidateSize(); }, 200);
-      }
-    }
-
-    function initMap() {
-      var mapElem = document.getElementById('map');
-      if (!mapElem) return;
-      state.map = L.map('map').setView([-2.5, 118.0], 4);
-      L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png').addTo(state.map);
-      
-      state.cities.forEach(c => {
-        L.marker([c.lat, c.lng]).addTo(state.map)
-          .bindPopup(`<b>${c.name}</b><br>Biaya: ${formatRp(c.cost)}<br><br><button class="btn btn-sm" onclick="buyCity('${c.id}')">Buka Cabang</button>`);
-      });
-    }
-
-    function buyCity(id) {
-      var c = state.cities.find(x => x.id === id);
-      if (c.owned) return alert("Cabang di kota ini sudah aktif!");
-      if (state.balance >= c.cost) {
-        state.balance -= c.cost; 
-        c.owned = true; 
-        renderAll(); 
-        alert("Selamat! Cabang " + c.name + " berhasil dibuka!");
-      } else alert("Saldo Anda kurang untuk membuka cabang di " + c.name);
     }
 
     function saveGame() { localStorage.setItem('indoManagerSave', JSON.stringify(state)); }
