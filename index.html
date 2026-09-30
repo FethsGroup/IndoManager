@@ -3,872 +3,432 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>IndoManager - Simulasi Manajer Minimarket Indonesia</title>
-  
-  <!-- Tailwind CSS CDN -->
-  <script src="https://cdn.tailwindcss.com"></script>
-  
-  <!-- Leaflet CSS & JS -->
+  <title>IndoManager — Simulasi Minimarket Indonesia</title>
   <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
-  <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
-
-  <!-- Font Awesome Icons -->
-  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" />
-
-  <!-- Google Font: Inter -->
-  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
-
-  <script>
-    tailwind.config = {
-      theme: {
-        extend: {
-          fontFamily: {
-            sans: ['Inter', 'sans-serif'],
-          },
-          colors: {
-            grab: {
-              green: '#00B14F',
-              darkGreen: '#00880A',
-              lightBg: '#F5F5F5',
-              accentBg: '#E8F8EE',
-              card: '#FFFFFF',
-              darkText: '#1C1C1C'
-            }
-          }
-        }
-      }
-    }
-  </script>
-
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
   <style>
-    body {
-      font-family: 'Inter', sans-serif;
-      background-color: #f4f5f7;
-      color: #1c1c1c;
-      -webkit-tap-highlight-color: transparent;
-    }
-    .custom-scroll::-webkit-scrollbar {
-      width: 4px;
-      height: 4px;
-    }
-    .custom-scroll::-webkit-scrollbar-thumb {
-      background: #cbd5e1;
-      border-radius: 4px;
-    }
-    .grab-gradient {
-      background: linear-gradient(135deg, #00B14F 0%, #00880A 100%);
-    }
-    .pulse-animation {
-      animation: pulse 2s cubic-bezier(0.4, 0, 0.6, 1) infinite;
-    }
-    @keyframes pulse {
-      0%, 100% { opacity: 1; }
-      50% { opacity: .5; }
-    }
+    * { box-sizing: border-box; margin: 0; padding: 0; font-family: 'Inter', sans-serif; }
+    body { background-color: #F5F5F5; color: #1A1A1A; display: flex; justify-content: center; min-height: 100vh; padding-bottom: 70px; }
+    #app { width: 100%; max-width: 800px; background: #FFFFFF; min-height: 100vh; position: relative; box-shadow: 0 0 20px rgba(0,0,0,0.05); }
+    header { background: #FFFFFF; padding: 16px; border-bottom: 1px solid #E5E5E5; display: flex; justify-content: space-between; align-items: center; position: sticky; top: 0; z-index: 100; }
+    .profile-info { display: flex; align-items: center; gap: 12px; }
+    .avatar { width: 40px; height: 40px; background: #00B14F; border-radius: 50%; display: flex; align-items: center; justify-content: center; color: white; font-weight: bold; }
+    .nav-bottom { position: fixed; bottom: 0; left: 50%; transform: translateX(-50%); width: 100%; max-width: 800px; background: #FFFFFF; border-top: 1px solid #E5E5E5; display: flex; justify-content: space-around; padding: 10px 0; z-index: 100; }
+    .nav-item { display: flex; flex-direction: column; align-items: center; font-size: 11px; color: #8A8A8A; text-decoration: none; cursor: pointer; border: none; background: none; }
+    .nav-item.active { color: #00B14F; font-weight: 600; }
+    .nav-item svg { width: 22px; height: 22px; margin-bottom: 4px; fill: currentColor; }
+    .tab-content { display: none; padding: 16px; }
+    .tab-content.active { display: block; }
+    .balance-card { background: linear-gradient(135deg, #00B14F, #00880A); color: white; border-radius: 16px; padding: 20px; position: relative; overflow: hidden; margin-bottom: 16px; box-shadow: 0 4px 12px rgba(0, 177, 79, 0.2); }
+    .balance-card::after { content: ''; position: absolute; right: -20px; bottom: -20px; width: 100px; height: 100px; background: rgba(255,255,255,0.1); border-radius: 50%; }
+    .balance-title { font-size: 12px; opacity: 0.9; }
+    .balance-amount { font-size: 26px; font-weight: 700; margin: 4px 0 12px 0; }
+    .stats-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; font-size: 12px; background: rgba(0,0,0,0.15); padding: 8px; border-radius: 8px; }
+    .quick-actions { display: grid; grid-template-columns: repeat(4, 1fr); gap: 10px; margin-bottom: 16px; }
+    .action-btn { background: #E8F7EE; color: #00880A; border: none; border-radius: 12px; padding: 12px 8px; font-size: 12px; font-weight: 600; cursor: pointer; display: flex; flex-direction: column; align-items: center; gap: 6px; }
+    .card { background: #FFFFFF; border: 1px solid #E5E5E5; border-radius: 12px; padding: 16px; margin-bottom: 12px; box-shadow: 0 2px 8px rgba(0,0,0,0.04); }
+    .time-control { display: flex; gap: 8px; margin-bottom: 16px; }
+    .speed-btn { flex: 1; padding: 8px; border: 1px solid #E5E5E5; background: #FFF; border-radius: 8px; font-weight: 600; cursor: pointer; }
+    .speed-btn.active { background: #00B14F; color: white; border-color: #00B14F; }
+    .item-row { display: flex; justify-content: space-between; align-items: center; padding: 10px 0; border-bottom: 1px solid #F5F5F5; }
+    .btn { background: #00B14F; color: white; border: none; padding: 8px 14px; border-radius: 8px; font-weight: 600; cursor: pointer; font-size: 13px; }
+    .btn-danger { background: #E63946; }
+    .btn-secondary { background: #F5F5F5; color: #1A1A1A; border: 1px solid #E5E5E5; }
+    .btn:disabled { opacity: 0.5; cursor: not-allowed; }
+    #map { height: 300px; width: 100%; border-radius: 12px; margin-bottom: 16px; }
+    .log-list { max-height: 200px; overflow-y: auto; font-size: 12px; }
+    .log-item { padding: 6px 0; border-bottom: 1px solid #F5F5F5; color: #8A8A8A; }
+    .log-item.good { color: #00880A; }
+    .log-item.bad { color: #E63946; }
+    input[type="number"] { width: 90px; padding: 6px; border: 1px solid #E5E5E5; border-radius: 6px; }
+    .locked-card { opacity: 0.6; background: #F5F5F5; text-align: center; padding: 30px 16px; border-radius: 12px; }
   </style>
 </head>
-<body class="bg-gray-100 flex flex-col min-h-screen pb-20 md:pb-6 select-none">
-
-  <!-- HEADER TOKO -->
-  <header class="bg-white sticky top-0 z-40 border-b border-gray-200 shadow-sm">
-    <div class="max-w-md md:max-w-4xl mx-auto px-4 py-3 flex items-center justify-between">
-      <div class="flex items-center space-x-3">
-        <div class="w-10 h-10 rounded-full bg-grab-green text-white flex items-center justify-center font-bold text-lg shadow-md">
-          <i class="fa-solid fa-store"></i>
-        </div>
+<body>
+  <div id="app">
+    <header>
+      <div class="profile-info">
+        <div class="avatar">M</div>
         <div>
-          <div class="text-xs text-gray-500 font-medium">Selamat Datang,</div>
-          <h1 class="text-base font-bold text-gray-800 leading-tight">Manager Minimarket</h1>
+          <div style="font-weight: 600; font-size: 14px;">Selamat Datang, Manager</div>
+          <div style="font-size: 12px; color: #8A8A8A;" id="time-display">08:00 WIB | Hari 1</div>
         </div>
       </div>
-      <div class="flex items-center space-x-2">
-        <button onclick="resetGame()" title="Reset Progres" class="p-2 text-gray-400 hover:text-red-500 rounded-lg hover:bg-gray-100 transition">
-          <i class="fa-solid fa-rotate-right"></i>
-        </button>
-        <div class="bg-grab-accentBg border border-grab-green/30 text-grab-darkGreen px-3 py-1 rounded-full text-xs font-bold flex items-center gap-1.5">
-          <span class="w-2 h-2 rounded-full bg-grab-green pulse-animation"></span>
-          <span id="headerDayText">Hari ke-1</span>
+      <button class="btn" onclick="nextDay()" style="padding: 6px 12px;">›› Skip Hari</button>
+    </header>
+
+    <!-- DASHBOARD -->
+    <div id="tab-home" class="tab-content active">
+      <div class="balance-card">
+        <div class="balance-title">SALDO UTAMA</div>
+        <div class="balance-amount" id="balance">Rp 5.000.000</div>
+        <div class="stats-grid">
+          <div>Level: <b id="level">1</b></div>
+          <div>Reputasi: <b id="reputation">50</b></div>
+          <div>Cabang: <b id="branch-count">1</b></div>
         </div>
+      </div>
+
+      <div class="time-control">
+        <button class="speed-btn active" onclick="setSpeed(1)">1x</button>
+        <button class="speed-btn" onclick="setSpeed(2)">2x</button>
+        <button class="speed-btn" onclick="setSpeed(5)">5x</button>
+        <button class="speed-btn" onclick="setSpeed(0)">⏸</button>
+      </div>
+
+      <div class="quick-actions">
+        <button class="action-btn" onclick="switchTab('toko')">
+          <svg viewBox="0 0 24 24"><path d="M20 4H4v2h16V4zm1 10v-2l-1-5H4l-1 5v2h1v6h10v-6h4v6h2v-6h1zm-9 4H6v-4h6v4z"/></svg>Toko
+        </button>
+        <button class="action-btn" onclick="switchTab('karyawan')">
+          <svg viewBox="0 0 24 24"><path d="M16 11c1.66 0 2.99-1.34 2.99-3S17.66 5 16 5c-1.66 0-3 1.34-3 3s1.34 3 3 3zm-8 0c1.66 0 2.99-1.34 2.99-3S9.66 5 8 5C6.34 5 5 6.34 5 8s1.34 3 3 3zm0 2c-2.33 0-7 1.17-7 3.5V19h14v-2.5c0-2.33-4.67-3.5-7-3.5z"/></svg>Karyawan
+        </button>
+        <button class="action-btn" onclick="switchTab('peta')">
+          <svg viewBox="0 0 24 24"><path d="M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7zm0 9.5c-1.38 0-2.5-1.12-2.5-2.5s1.12-2.5 2.5-2.5 2.5 1.12 2.5 2.5-1.12 2.5-2.5 2.5z"/></svg>Peta
+        </button>
+        <button class="action-btn" onclick="switchTab('review')">
+          <svg viewBox="0 0 24 24"><path d="M20 2H4c-1.1 0-1.99.9-1.99 2L2 22l4-4h14c1.1 0 2-.9 2-2V4c0-1.1-.9-2-2-2z"/></svg>Netizen
+        </button>
+      </div>
+
+      <div class="card">
+        <h4 style="margin-bottom: 8px;">Penjualan Hari Ini</h4>
+        <div style="display: flex; justify-content: space-between; font-size: 14px;">
+          <span>Pembeli: <b id="today-buyers">0</b> orang</span>
+          <span>Omset: <b id="today-sales">Rp 0</b></span>
+        </div>
+      </div>
+
+      <div class="card">
+        <h4 style="margin-bottom: 8px;">Log Aktivitas</h4>
+        <div class="log-list" id="activity-log"></div>
       </div>
     </div>
-  </header>
 
-  <!-- MAIN CONTAINER -->
-  <main class="max-w-md md:max-w-4xl mx-auto w-full px-4 pt-4 flex-1">
-
-    <!-- TAB 1: DASHBOARD / HOME -->
-    <section id="tab-dashboard" class="tab-content space-y-4">
-      
-      <!-- SALDO & REPUTASI CARD (GRAB STYLE) -->
-      <div class="grab-gradient rounded-2xl p-5 text-white shadow-lg relative overflow-hidden">
-        <div class="absolute -right-4 -bottom-4 opacity-10 text-8xl">
-          <i class="fa-solid fa-cash-register"></i>
-        </div>
-        <div class="flex justify-between items-start mb-2">
-          <div>
-            <p class="text-xs text-green-100 uppercase tracking-wider font-semibold">Total Saldo Kas</p>
-            <h2 id="saldoText" class="text-3xl font-extrabold tracking-tight mt-0.5">Rp 10.000.000</h2>
-          </div>
-          <span class="bg-white/20 backdrop-blur-md px-3 py-1 rounded-full text-xs font-bold border border-white/30">
-            Level <span id="levelText">1</span>
-          </span>
-        </div>
-
-        <div class="grid grid-cols-3 gap-2 mt-4 pt-3 border-t border-white/20 text-center">
-          <div>
-            <p class="text-[10px] text-green-100 uppercase font-medium">Reputasi Toko</p>
-            <p class="text-sm font-bold mt-0.5 flex items-center justify-center gap-1">
-              <i class="fa-solid fa-star text-yellow-300 text-xs"></i>
-              <span id="reputasiText">100%</span>
-            </p>
-          </div>
-          <div>
-            <p class="text-[10px] text-green-100 uppercase font-medium">Total Cabang</p>
-            <p class="text-sm font-bold mt-0.5" id="cabangCountText">1 Toko</p>
-          </div>
-          <div>
-            <p class="text-[10px] text-green-100 uppercase font-medium">Gaji Karyawan/Hari</p>
-            <p class="text-sm font-bold mt-0.5" id="totalGajiText">Rp 100.000</p>
-          </div>
-        </div>
-      </div>
-
-      <!-- REALTIME CLOCK & SPEED CONTROLLER -->
-      <div class="bg-white rounded-xl p-4 shadow-sm border border-gray-100">
-        <div class="flex items-center justify-between mb-3">
-          <div class="flex items-center gap-2">
-            <i class="fa-regular fa-clock text-grab-green text-lg"></i>
-            <div>
-              <span class="text-xs text-gray-400 font-medium block">Jam Operasional (08:00 - 22:00)</span>
-              <span id="clockDisplay" class="text-xl font-extrabold text-gray-800 tracking-wider">08:00</span>
-            </div>
-          </div>
-          
-          <!-- TIME SPEED BUTTONS -->
-          <div class="flex bg-gray-100 p-1 rounded-lg gap-1 border border-gray-200">
-            <button onclick="setSpeed(0)" id="btnSpeed0" class="speed-btn px-2.5 py-1 text-xs font-bold rounded-md transition text-gray-600 hover:bg-white">PAUSE</button>
-            <button onclick="setSpeed(1)" id="btnSpeed1" class="speed-btn px-2.5 py-1 text-xs font-bold rounded-md bg-grab-green text-white shadow-sm transition">1x</button>
-            <button onclick="setSpeed(2)" id="btnSpeed2" class="speed-btn px-2.5 py-1 text-xs font-bold rounded-md transition text-gray-600 hover:bg-white">2x</button>
-            <button onclick="setSpeed(5)" id="btnSpeed5" class="speed-btn px-2.5 py-1 text-xs font-bold rounded-md transition text-gray-600 hover:bg-white">5x</button>
-            <button onclick="setSpeed(10)" id="btnSpeed10" class="speed-btn px-2.5 py-1 text-xs font-bold rounded-md transition text-gray-600 hover:bg-white">10x</button>
-          </div>
-        </div>
-
-        <!-- PROGRESS BAR WAKTU -->
-        <div class="w-full bg-gray-100 h-2 rounded-full overflow-hidden">
-          <div id="dayProgressBar" class="bg-grab-green h-full w-0 transition-all duration-300"></div>
-        </div>
-      </div>
-
-      <!-- COUNTER KINERJA HARI INI -->
-      <div class="grid grid-cols-2 gap-3">
-        <div class="bg-white p-3.5 rounded-xl border border-gray-100 shadow-sm flex items-center space-x-3">
-          <div class="w-10 h-10 rounded-xl bg-blue-50 text-blue-600 flex items-center justify-center text-lg">
-            <i class="fa-solid fa-users"></i>
-          </div>
-          <div>
-            <p class="text-xs text-gray-500 font-medium">Pembeli Hari Ini</p>
-            <p id="statPembeli" class="text-lg font-extrabold text-gray-800">0 Orang</p>
-          </div>
-        </div>
-
-        <div class="bg-white p-3.5 rounded-xl border border-gray-100 shadow-sm flex items-center space-x-3">
-          <div class="w-10 h-10 rounded-xl bg-emerald-50 text-emerald-600 flex items-center justify-center text-lg">
-            <i class="fa-solid fa-wallet"></i>
-          </div>
-          <div>
-            <p class="text-xs text-gray-500 font-medium">Penjualan Hari Ini</p>
-            <p id="statPenjualan" class="text-lg font-extrabold text-gray-800">Rp 0</p>
-          </div>
-        </div>
-      </div>
-
-      <!-- QUICK ACTIONS GRID -->
-      <div class="grid grid-cols-4 gap-2">
-        <button onclick="switchTab('toko')" class="bg-white hover:bg-grab-accentBg p-3 rounded-xl border border-gray-100 shadow-sm flex flex-col items-center justify-center group transition">
-          <div class="w-10 h-10 rounded-full bg-emerald-100 text-grab-green flex items-center justify-center text-lg mb-1 group-hover:scale-110 transition-transform">
-            <i class="fa-solid fa-boxes-stacked"></i>
-          </div>
-          <span class="text-xs font-semibold text-gray-700">Toko</span>
-        </button>
-
-        <button onclick="switchTab('karyawan')" class="bg-white hover:bg-grab-accentBg p-3 rounded-xl border border-gray-100 shadow-sm flex flex-col items-center justify-center group transition">
-          <div class="w-10 h-10 rounded-full bg-blue-100 text-blue-600 flex items-center justify-center text-lg mb-1 group-hover:scale-110 transition-transform">
-            <i class="fa-solid fa-user-gear"></i>
-          </div>
-          <span class="text-xs font-semibold text-gray-700">Karyawan</span>
-        </button>
-
-        <button onclick="switchTab('peta')" class="bg-white hover:bg-grab-accentBg p-3 rounded-xl border border-gray-100 shadow-sm flex flex-col items-center justify-center group transition">
-          <div class="w-10 h-10 rounded-full bg-amber-100 text-amber-600 flex items-center justify-center text-lg mb-1 group-hover:scale-110 transition-transform">
-            <i class="fa-solid fa-map-location-dot"></i>
-          </div>
-          <span class="text-xs font-semibold text-gray-700">Peta Cabang</span>
-        </button>
-
-        <button onclick="switchTab('upgrade')" class="bg-white hover:bg-grab-accentBg p-3 rounded-xl border border-gray-100 shadow-sm flex flex-col items-center justify-center group transition">
-          <div class="w-10 h-10 rounded-full bg-purple-100 text-purple-600 flex items-center justify-center text-lg mb-1 group-hover:scale-110 transition-transform">
-            <i class="fa-solid fa-circle-up"></i>
-          </div>
-          <span class="text-xs font-semibold text-gray-700">Upgrade</span>
-        </button>
-      </div>
-
-      <!-- LIVE ACTIVITY LOG -->
-      <div class="bg-white rounded-xl p-4 shadow-sm border border-gray-100">
-        <div class="flex items-center justify-between mb-3">
-          <h3 class="font-bold text-gray-800 text-sm flex items-center gap-2">
-            <i class="fa-solid fa-list-check text-grab-green"></i> Log Aktivitas Real-Time
-          </h3>
-          <span class="text-[10px] text-gray-400 font-medium">Maksimal 50 Aktivitas</span>
-        </div>
-        <div id="activityLog" class="h-48 overflow-y-auto custom-scroll space-y-2 pr-1 text-xs">
-          <div class="text-gray-400 text-center py-8">Belum ada aktivitas tercatat...</div>
-        </div>
-      </div>
-
-    </section>
-
-    <!-- TAB 2: TOKO & INVENTORY & DYNAMIC PRICING -->
-    <section id="tab-toko" class="tab-content hidden space-y-4">
-      <div class="bg-white p-4 rounded-xl shadow-sm border border-gray-100 flex justify-between items-center">
-        <div>
-          <h2 class="font-bold text-gray-800 text-base">Stok & Dynamic Pricing</h2>
-          <p class="text-xs text-gray-500">Atur harga jual barang. Harga wajar meningkatkan minat pembeli!</p>
-        </div>
-      </div>
-
-      <div id="productList" class="grid grid-cols-1 md:grid-cols-2 gap-3">
-        <!-- Products populated by JS -->
-      </div>
-    </section>
-
-    <!-- TAB 3: KARYAWAN MANAGEMENT (WITH FIRE OPTION) -->
-    <section id="tab-karyawan" class="tab-content hidden space-y-4">
-      <div class="bg-white p-4 rounded-xl shadow-sm border border-gray-100 flex justify-between items-center">
-        <div>
-          <h2 class="font-bold text-gray-800 text-base">Manajemen Karyawan</h2>
-          <p class="text-xs text-gray-500">Karyawan mempercepat transaksi & menurunkan risiko stok habis.</p>
-        </div>
-        <button onclick="hireEmployee()" class="bg-grab-green hover:bg-grab-darkGreen text-white px-3 py-1.5 rounded-lg text-xs font-bold transition shadow-sm flex items-center gap-1">
-          <i class="fa-solid fa-plus"></i> Rekrut Baru
-        </button>
-      </div>
-
-      <div id="employeeList" class="space-y-3">
-        <!-- Employees populated by JS -->
-      </div>
-    </section>
-
-    <!-- TAB 4: PETA & BUKA CABANG (LEAFLET) -->
-    <section id="tab-peta" class="tab-content hidden space-y-4">
-      <div class="bg-white p-4 rounded-xl shadow-sm border border-gray-100">
-        <h2 class="font-bold text-gray-800 text-base">Peta Cabang Minimarket</h2>
-        <p class="text-xs text-gray-500">Ekspansi jaringan toko Anda ke kota-kota besar di Indonesia!</p>
-      </div>
-
-      <!-- MAP CONTAINER -->
-      <div class="bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden">
-        <div id="map" class="w-full h-64 md:h-80 z-10"></div>
-      </div>
-
-      <!-- CITIES LIST -->
-      <div id="cityList" class="grid grid-cols-1 md:grid-cols-2 gap-3">
-        <!-- Cities populated by JS -->
-      </div>
-    </section>
-
-    <!-- TAB 5: UPGRADE TOKO -->
-    <section id="tab-upgrade" class="tab-content hidden space-y-4">
-      <div class="bg-white p-4 rounded-xl shadow-sm border border-gray-100">
-        <h2 class="font-bold text-gray-800 text-base">Fasilitas & Upgrade Toko</h2>
-        <p class="text-xs text-gray-500">Tingkatkan kenyamanan pelanggan dan reputasi usaha Anda.</p>
-      </div>
-
-      <div id="upgradeList" class="grid grid-cols-1 md:grid-cols-2 gap-3">
-        <!-- Upgrades populated by JS -->
-      </div>
-    </section>
-
-  </main>
-
-  <!-- BOTTOM NAVIGATION BAR (GRAB STYLE) -->
-  <nav class="fixed bottom-0 left-0 right-0 bg-white border-t border-gray-200 z-50 shadow-lg">
-    <div class="max-w-md md:max-w-md mx-auto grid grid-cols-5 h-16">
-      <button onclick="switchTab('dashboard')" id="nav-dashboard" class="nav-item active text-grab-green flex flex-col items-center justify-center space-y-1">
-        <i class="fa-solid fa-house text-lg"></i>
-        <span class="text-[10px] font-bold">Utama</span>
-      </button>
-
-      <button onclick="switchTab('toko')" id="nav-toko" class="nav-item text-gray-400 hover:text-grab-green flex flex-col items-center justify-center space-y-1">
-        <i class="fa-solid fa-store text-lg"></i>
-        <span class="text-[10px] font-bold">Toko</span>
-      </button>
-
-      <button onclick="switchTab('karyawan')" id="nav-karyawan" class="nav-item text-gray-400 hover:text-grab-green flex flex-col items-center justify-center space-y-1">
-        <i class="fa-solid fa-users text-lg"></i>
-        <span class="text-[10px] font-bold">Karyawan</span>
-      </button>
-
-      <button onclick="switchTab('peta')" id="nav-peta" class="nav-item text-gray-400 hover:text-grab-green flex flex-col items-center justify-center space-y-1">
-        <i class="fa-solid fa-map text-lg"></i>
-        <span class="text-[10px] font-bold">Peta</span>
-      </button>
-
-      <button onclick="switchTab('upgrade')" id="nav-upgrade" class="nav-item text-gray-400 hover:text-grab-green flex flex-col items-center justify-center space-y-1">
-        <i class="fa-solid fa-rocket text-lg"></i>
-        <span class="text-[10px] font-bold">Upgrade</span>
-      </button>
+    <!-- TOKO -->
+    <div id="tab-toko" class="tab-content">
+      <h3>Stok & Dynamic Pricing</h3>
+      <p style="font-size: 12px; color: #8A8A8A; margin-bottom: 12px;">Atur harga jual sesuai keinginan. Harga terlalu mahal membuat pembeli kabur!</p>
+      <div id="product-list"></div>
     </div>
-  </nav>
 
+    <!-- KARYAWAN -->
+    <div id="tab-karyawan" class="tab-content">
+      <h3>Manajemen Karyawan</h3>
+      <button class="btn" style="margin: 10px 0; width: 100%;" onclick="hireEmployee()">+ Rekrut Karyawan Baru (Rp 500.000)</button>
+      <div id="employee-list"></div>
+    </div>
+
+    <!-- PETA -->
+    <div id="tab-peta" class="tab-content">
+      <h3>Peta Cabang Indonesia</h3>
+      <p style="font-size: 12px; color: #8A8A8A; margin-bottom: 12px;">Buka cabang di berbagai kota untuk meningkatkan pendapatan pasif.</p>
+      <div id="map"></div>
+      <div id="city-list"></div>
+    </div>
+
+    <!-- NETIZEN REVIEWS -->
+    <div id="tab-review" class="tab-content">
+      <h3>Ulasan Netizen</h3>
+      <div class="log-list" id="review-list" style="max-height: 400px;"></div>
+    </div>
+
+    <!-- FRANCHISE & UPGRADE -->
+    <div id="tab-upgrade" class="tab-content">
+      <h3>Upgrade & Franchise</h3>
+      <div id="upgrade-list"></div>
+      <hr style="margin: 16px 0; border: none; border-top: 1px solid #E5E5E5;">
+      <h3>Kemitraan Franchise</h3>
+      <div id="franchise-section"></div>
+    </div>
+
+    <!-- NAV BOTTOM -->
+    <nav class="nav-bottom">
+      <button class="nav-item active" onclick="switchTab('home')">
+        <svg viewBox="0 0 24 24"><path d="M10 20v-6h4v6h5v-8h3L12 3 2 12h3v8z"/></svg>Home
+      </button>
+      <button class="nav-item" onclick="switchTab('toko')">
+        <svg viewBox="0 0 24 24"><path d="M20 4H4v2h16V4zm1 10v-2l-1-5H4l-1 5v2h1v6h10v-6h4v6h2v-6h1z"/></svg>Toko
+      </button>
+      <button class="nav-item" onclick="switchTab('peta')">
+        <svg viewBox="0 0 24 24"><path d="M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7z"/></svg>Peta
+      </button>
+      <button class="nav-item" onclick="switchTab('karyawan')">
+        <svg viewBox="0 0 24 24"><path d="M16 11c1.66 0 2.99-1.34 2.99-3S17.66 5 16 5c-1.66 0-3 1.34-3 3zm-8 0c1.66 0 2.99-1.34 2.99-3S9.66 5 8 5z"/></svg>Karyawan
+      </button>
+      <button class="nav-item" onclick="switchTab('upgrade')">
+        <svg viewBox="0 0 24 24"><path d="M12 2l2.4 7.2h7.6l-6 4.8 2.4 7.2-6-4.8-6 4.8 2.4-7.2-6-4.8h7.6z"/></svg>Upgrade
+      </button>
+    </nav>
+  </div>
+
+  <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
   <script>
-    /* ==========================================
-       GAME DATA & INITIAL STATE
-       ========================================== */
-    const DEFAULT_STATE = {
-      saldo: 10000000,
-      reputasi: 100,
-      level: 1,
-      hari: 1,
-      jam: 8,
-      menit: 0,
-      pembeliHariIni: 0,
-      penjualanHariIni: 0,
-      
-      // Products data with base cost, base market price & current user price
+    var state = {
+      balance: 5000000, level: 1, reputation: 50, day: 1, hour: 8, minute: 0,
+      todayBuyers: 0, todaySales: 0, speed: 1, isPaused: false,
       products: [
-        { id: 'aqua', name: 'Aqua 600ml', stock: 50, cost: 2500, price: 3500, basePrice: 3500, icon: 'fa-bottle-water', color: 'text-blue-500' },
-        { id: 'indomie', name: 'Indomie Goreng', stock: 100, cost: 2300, price: 3100, basePrice: 3100, icon: 'fa-bowl-food', color: 'text-amber-600' },
-        { id: 'taro', name: 'Taro Snack 36g', stock: 40, cost: 4000, price: 5500, basePrice: 5500, icon: 'fa-cookie', color: 'text-orange-500' },
-        { id: 'chitato', name: 'Chitato Sapi Panggang', stock: 30, cost: 8000, price: 11000, basePrice: 11000, icon: 'fa-box-open', color: 'text-yellow-600' },
-        { id: 'ultramilk', name: 'Ultra Milk Cokelat 250ml', stock: 45, cost: 5000, price: 7000, basePrice: 7000, icon: 'fa-glass-water', color: 'text-sky-600' },
-        { id: 'sampoerna', name: 'Sampoerna Mild 16', stock: 20, cost: 28000, price: 33000, basePrice: 33000, icon: 'fa-smoking', color: 'text-red-500' }
+        { id: 1, name: "Aqua 600ml", cost: 2500, price: 4000, basePrice: 4000, stock: 100 },
+        { id: 2, name: "Indomie Goreng", cost: 2500, price: 3500, basePrice: 3500, stock: 200 },
+        { id: 3, name: "Taro Net", cost: 5000, price: 8000, basePrice: 8000, stock: 50 },
+        { id: 4, name: "Chitato Sapi", cost: 8000, price: 12000, basePrice: 12000, stock: 40 },
+        { id: 5, name: "Ultra Milk 250ml", cost: 5000, price: 7500, basePrice: 7500, stock: 80 },
+        { id: 6, name: "Sampoerna Mild", cost: 25000, price: 30000, basePrice: 30000, stock: 30 }
       ],
-
-      // Employees list
-      employees: [
-        { id: 1, name: 'Budi Santoso', role: 'Kasir', salary: 100000, speed: 1.2 }
-      ],
-
-      // Cities data for Leaflet Map
+      employees: [],
       cities: [
-        { id: 'jakarta', name: 'Jakarta', coords: [-6.2088, 106.8456], cost: 0, multiplier: 1.0, unlocked: true },
-        { id: 'surabaya', name: 'Surabaya', coords: [-7.2575, 112.7521], cost: 15000000, multiplier: 1.3, unlocked: false },
-        { id: 'bandung', name: 'Bandung', coords: [-6.9175, 107.6191], cost: 20000000, multiplier: 1.5, unlocked: false },
-        { id: 'medan', name: 'Medan', coords: [3.5952, 98.6722], cost: 30000000, multiplier: 1.8, unlocked: false },
-        { id: 'makassar', name: 'Makassar', coords: [-5.1477, 119.4327], cost: 40000000, multiplier: 2.0, unlocked: false },
-        { id: 'semarang', name: 'Semarang', coords: [-6.9667, 110.4167], cost: 50000000, multiplier: 2.2, unlocked: false },
-        { id: 'palembang', name: 'Palembang', coords: [-2.9761, 104.7754], cost: 60000000, multiplier: 2.5, unlocked: false },
-        { id: 'denpasar', name: 'Denpasar (Bali)', coords: [-8.6705, 115.2126], cost: 80000000, multiplier: 3.0, unlocked: false },
-        { id: 'yogyakarta', name: 'Yogyakarta', coords: [-7.7956, 110.3695], cost: 100000000, multiplier: 3.5, unlocked: false },
-        { id: 'balikpapan', name: 'Balikpapan', coords: [-1.2379, 116.8529], cost: 150000000, multiplier: 4.5, unlocked: false }
+        { id: 'jkt', name: "Jakarta", lat: -6.2088, lng: 106.8456, cost: 5000000, mult: 1.5, owned: true },
+        { id: 'sby', name: "Surabaya", lat: -7.2575, lng: 112.7521, cost: 4000000, mult: 1.3, owned: false },
+        { id: 'bdg', name: "Bandung", lat: -6.9175, lng: 107.6191, cost: 3500000, mult: 1.2, owned: false },
+        { id: 'mdn', name: "Medan", lat: 3.5952, lng: 98.6722, cost: 3000000, mult: 1.1, owned: false },
+        { id: 'mks', name: "Makassar", lat: -5.1477, lng: 119.4327, cost: 3000000, mult: 1.1, owned: false }
       ],
-
-      // Upgrades list
       upgrades: [
-        { id: 'rak', name: 'Rak Tambahan', desc: 'Meningkatkan stok maks & variasi', cost: 2000000, bought: false, icon: 'fa-layer-group' },
-        { id: 'kasir', name: 'Kasir Cepat', desc: 'Mempercepat antrean pelanggan 30%', cost: 5000000, bought: false, icon: 'fa-bolt' },
-        { id: 'ac', name: 'AC Sentral', desc: 'Meningkatkan kepuasan & reputasi', cost: 8000000, bought: false, icon: 'fa-snowflake' },
-        { id: 'cctv', name: 'CCTV Keamanan', desc: 'Mengurangi kerugian barang hilang', cost: 12000000, bought: false, icon: 'fa-video' }
+        { id: 'rak', name: "Rak Tambahan (+20% Stok Cap)", cost: 2000000, owned: false },
+        { id: 'kasir', name: "Kasir Cepat (+15% Income)", cost: 3000000, owned: false }
       ],
-
-      logs: []
+      franchises: [
+        { id: 'f1', name: "Franchise Tier 1 (Kios Mini)", cost: 10000000, royalty: 300000, owned: false },
+        { id: 'f2', name: "Franchise Tier 2 (Super Store)", cost: 25000000, royalty: 800000, owned: false }
+      ],
+      logs: [], reviews: [], map: null, mapMarkers: {}
     };
 
-    let gameState = JSON.parse(localStorage.getItem('indoManagerSave')) || JSON.parse(JSON.stringify(DEFAULT_STATE));
-    let timeSpeed = 1; // 0=Pause, 1=1x, 2=2x, 5=5x, 10=10x
-    let timerInterval = null;
-    let leafletMap = null;
-    let mapMarkers = {};
+    var customerComments = {
+      expensive: ["Mahal amat buset!", "Mending beli di sebelah lah", "Harga gak ngotak njir"],
+      outOfStock: ["Yah stok habis, rugi dong", "Toko segini gede barang kosong", "Kecewa bgt gaada stok"],
+      success: ["Mantap pelayanannya fast response!", "Langganan nih di sini", "Adem, barang lengkap!"]
+    };
 
-    const RANDOM_NAMES = ['Budi', 'Siti', 'Andi', 'Rina', 'Dedi', 'Maya', 'Joko', 'Lina', 'Agus', 'Dewi', 'Eko', 'Nani'];
-    const ROLES = [
-      { role: 'Kasir', salary: 100000, speed: 1.2 },
-      { role: 'Pramuniaga', salary: 120000, speed: 1.4 },
-      { role: 'Supervisor', salary: 200000, speed: 1.8 }
-    ];
+    function formatRp(val) { return "Rp " + val.toLocaleString('id-ID'); }
 
-    // FORMAT CURRENCY
-    function formatRp(val) {
-      return 'Rp ' + Math.floor(val).toLocaleString('id-ID');
+    function init() {
+      loadGame();
+      renderAll();
+      initMap();
+      startGameloop();
     }
 
-    // LOG ACTIVITY
-    function addLog(text, type = 'info') {
-      const timeStr = `${String(gameState.jam).padStart(2, '0')}:${String(gameState.menit).padStart(2, '0')}`;
-      let badgeClass = 'bg-gray-100 text-gray-600';
-      if (type === 'success') badgeClass = 'bg-emerald-100 text-grab-darkGreen font-semibold';
-      if (type === 'danger') badgeClass = 'bg-red-100 text-red-600 font-semibold';
-      if (type === 'warning') badgeClass = 'bg-amber-100 text-amber-700 font-semibold';
-
-      gameState.logs.unshift({ time: timeStr, text, type, badgeClass });
-      if (gameState.logs.length > 50) gameState.logs.pop();
-
-      renderLogs();
+    function startGameloop() {
+      setInterval(function() {
+        if (state.speed === 0) return;
+        state.minute += 10;
+        if (state.minute >= 60) {
+          state.minute = 0; state.hour++;
+          if (state.hour >= 22) { nextDay(); state.hour = 8; }
+        }
+        spawnCustomer();
+        renderHeader();
+      }, 1000 / state.speed);
     }
 
-    function renderLogs() {
-      const container = document.getElementById('activityLog');
-      if (!container) return;
+    function spawnCustomer() {
+      var prod = state.products[Math.floor(Math.random() * state.products.length)];
+      var qty = Math.floor(Math.random() * 3) + 1;
+      var priceRatio = prod.price / prod.basePrice;
 
-      if (gameState.logs.length === 0) {
-        container.innerHTML = `<div class="text-gray-400 text-center py-8">Belum ada aktivitas tercatat...</div>`;
+      if (priceRatio > 1.3 && Math.random() < 0.7) {
+        addReview(getRandomComment('expensive') + " (" + prod.name + " kemahalan)", 'bad');
+        state.reputation = Math.max(0, state.reputation - 0.5);
         return;
       }
 
-      container.innerHTML = gameState.logs.map(log => `
-        <div class="flex items-start justify-between p-2 rounded-lg ${log.badgeClass} transition">
-          <span class="flex-1 mr-2">${log.text}</span>
-          <span class="text-[10px] opacity-75 font-mono">${log.time}</span>
-        </div>
-      `).join('');
-    }
-
-    // REAL-TIME CLOCK ENGINE
-    function startClockEngine() {
-      if (timerInterval) clearInterval(timerInterval);
-      
-      timerInterval = setInterval(() => {
-        if (timeSpeed === 0) return;
-
-        // Advance minutes based on speed
-        gameState.menit += 1;
-        if (gameState.menit >= 60) {
-          gameState.menit = 0;
-          gameState.jam += 1;
-        }
-
-        // Customer Spawning Logic on Ticks
-        handleCustomerSpawn();
-
-        // Check End of Day (22:00)
-        if (gameState.jam >= 22) {
-          endOfDayProcess();
-        }
-
-        updateUI();
-      }, 1000 / timeSpeed);
-    }
-
-    function setSpeed(speed) {
-      timeSpeed = speed;
-      document.querySelectorAll('.speed-btn').forEach(btn => {
-        btn.classList.remove('bg-grab-green', 'text-white', 'shadow-sm');
-        btn.classList.add('text-gray-600', 'hover:bg-white');
-      });
-
-      const activeBtn = document.getElementById(`btnSpeed${speed}`);
-      if (activeBtn) {
-        activeBtn.classList.add('bg-grab-green', 'text-white', 'shadow-sm');
-        activeBtn.classList.remove('text-gray-600', 'hover:bg-white');
-      }
-
-      startClockEngine();
-    }
-
-    // END OF DAY PROCESS (22:00)
-    function endOfDayProcess() {
-      // Calculate Daily Employees Salary Overhead
-      const totalGaji = gameState.employees.reduce((sum, e) => sum + e.salary, 0);
-      gameState.saldo -= totalGaji;
-
-      addLog(` Hari ke-${gameState.hari} selesai. Gaji Karyawan dibayar: ${formatRp(totalGaji)}`, 'warning');
-
-      // Reset for Next Day
-      gameState.hari += 1;
-      gameState.jam = 8;
-      gameState.menit = 0;
-      gameState.pembeliHariIni = 0;
-      gameState.penjualanHariIni = 0;
-
-      // Auto Level Up check
-      if (gameState.saldo > gameState.level * 25000000) {
-        gameState.level += 1;
-        addLog(`Selamat! Minimarket naik ke Level ${gameState.level}`, 'success');
-      }
-
-      saveGame();
-    }
-
-    // CUSTOMER SPAWN SIMULATION
-    function handleCustomerSpawn() {
-      // Chance of customer arriving (Base chance modified by active branch count, employees, and price fair-ness)
-      const branchMultiplier = gameState.cities.filter(c => c.unlocked).length;
-      const employeeMultiplier = 1 + (gameState.employees.length * 0.15);
-      
-      // Random customer spawn check
-      if (Math.random() < (0.35 * employeeMultiplier)) {
-        // Customer selects a random product
-        const availableProducts = gameState.products;
-        const targetProd = availableProducts[Math.floor(Math.random() * availableProducts.length)];
-
-        // Dynamic Pricing Conversion Chance
-        // Price higher than base price reduces purchase probability
-        const priceRatio = targetProd.price / targetProd.basePrice;
-        let buyProbability = 0.85;
-
-        if (priceRatio > 1.2) buyProbability = 0.3; // Too expensive
-        else if (priceRatio > 1.0) buyProbability = 0.6;
-        else if (priceRatio < 1.0) buyProbability = 0.98; // Cheap item
-
-        if (Math.random() < buyProbability) {
-          // Attempt Purchase
-          if (targetProd.stock > 0) {
-            const qty = Math.floor(Math.random() * 2) + 1; // 1-2 items
-            const finalQty = Math.min(qty, targetProd.stock);
-
-            targetProd.stock -= finalQty;
-            const revenue = targetProd.price * finalQty * branchMultiplier;
-
-            gameState.saldo += revenue;
-            gameState.penjualanHariIni += revenue;
-            gameState.pembeliHariIni += 1;
-
-            // Small chance to increase reputation
-            if (Math.random() < 0.1) gameState.reputasi = Math.min(100, gameState.reputasi + 0.1);
-
-            addLog(`Pembeli membeli ${finalQty}x ${targetProd.name} (+${formatRp(revenue)})`, 'success');
-          } else {
-            // Out of stock penalty
-            gameState.reputasi = Math.max(10, gameState.reputasi - 0.5);
-            addLog(`Pembeli kecewa! Stok ${targetProd.name} habis (-0.5 Reputasi)`, 'danger');
-          }
-        }
-      }
-    }
-
-    // RENDER PRODUCTS IN TOKO TAB
-    function renderProducts() {
-      const container = document.getElementById('productList');
-      if (!container) return;
-
-      container.innerHTML = gameState.products.map(p => `
-        <div class="bg-white p-4 rounded-xl shadow-sm border border-gray-100 flex flex-col justify-between space-y-3">
-          <div class="flex items-start justify-between">
-            <div class="flex items-center space-x-3">
-              <div class="w-10 h-10 rounded-lg bg-gray-100 flex items-center justify-center ${p.color} text-xl">
-                <i class="fa-solid ${p.icon}"></i>
-              </div>
-              <div>
-                <h3 class="font-bold text-gray-800 text-sm">${p.name}</h3>
-                <p class="text-xs text-gray-400">Modal: ${formatRp(p.cost)} | Acuan: ${formatRp(p.basePrice)}</p>
-              </div>
-            </div>
-            <span class="px-2 py-0.5 text-xs font-bold rounded-full ${p.stock < 10 ? 'bg-red-100 text-red-600' : 'bg-green-100 text-grab-darkGreen'}">
-              Stok: ${p.stock}
-            </span>
-          </div>
-
-          <!-- DYNAMIC PRICING ADJUSTMENT -->
-          <div class="flex items-center justify-between bg-gray-50 p-2 rounded-lg border border-gray-200">
-            <span class="text-xs font-semibold text-gray-600">Harga Jual:</span>
-            <div class="flex items-center space-x-1">
-              <button onclick="adjustPrice('${p.id}', -500)" class="w-6 h-6 rounded bg-gray-200 hover:bg-gray-300 font-bold text-xs flex items-center justify-center">-</button>
-              <span class="text-xs font-extrabold text-gray-800 px-1">${formatRp(p.price)}</span>
-              <button onclick="adjustPrice('${p.id}', 500)" class="w-6 h-6 rounded bg-gray-200 hover:bg-gray-300 font-bold text-xs flex items-center justify-center">+</button>
-            </div>
-          </div>
-
-          <!-- BUY STOCK BUTTON -->
-          <button onclick="buyStock('${p.id}')" class="w-full bg-grab-green hover:bg-grab-darkGreen text-white py-2 rounded-lg text-xs font-bold transition shadow-sm flex items-center justify-center gap-1">
-            <i class="fa-solid fa-cart-plus"></i> Beli Stok (+10 Unit = ${formatRp(p.cost * 10)})
-          </button>
-        </div>
-      `).join('');
-    }
-
-    function adjustPrice(prodId, delta) {
-      const prod = gameState.products.find(p => p.id === prodId);
-      if (prod) {
-        prod.price = Math.max(prod.cost, prod.price + delta);
-        renderProducts();
-        saveGame();
-      }
-    }
-
-    function buyStock(prodId) {
-      const prod = gameState.products.find(p => p.id === prodId);
-      const totalCost = prod.cost * 10;
-
-      if (gameState.saldo >= totalCost) {
-        gameState.saldo -= totalCost;
-        prod.stock += 10;
-        addLog(`Beli stok 10x ${prod.name} (${formatRp(totalCost)})`, 'info');
-        updateUI();
-        renderProducts();
-        saveGame();
+      if (prod.stock >= qty) {
+        prod.stock -= qty;
+        var total = prod.price * qty;
+        state.balance += total;
+        state.todaySales += total;
+        state.todayBuyers++;
+        addLog("Pembeli membeli " + prod.name + " " + qty + "x (" + formatRp(total) + ")", 'good');
+        if (Math.random() < 0.2) addReview(getRandomComment('success'), 'good');
       } else {
-        alert('Saldo kas tidak mencukupi!');
+        addReview(getRandomComment('outOfStock') + " (" + prod.name + ")", 'bad');
+        state.reputation = Math.max(0, state.reputation - 0.5);
+      }
+      renderAll();
+    }
+
+    function getRandomComment(type) {
+      var arr = customerComments[type];
+      return arr[Math.floor(Math.random() * arr.length)];
+    }
+
+    function addLog(msg, type) {
+      state.logs.unshift({ msg: msg, type: type });
+      if (state.logs.length > 30) state.logs.pop();
+    }
+
+    function addReview(msg, type) {
+      state.reviews.unshift({ msg: msg, type: type, time: state.hour + ":" + (state.minute || '00') });
+      if (state.reviews.length > 30) state.reviews.pop();
+    }
+
+    function setSpeed(sp) {
+      state.speed = sp;
+      document.querySelectorAll('.speed-btn').forEach(b => b.classList.remove('active'));
+      event.target.classList.add('active');
+    }
+
+    function nextDay() {
+      state.day++;
+      var ownedBranches = state.cities.filter(c => c.owned).length;
+      var passiveIncome = ownedBranches * 200000;
+      var totalSalaries = state.employees.reduce((acc, e) => acc + e.salary, 0);
+
+      state.franchises.forEach(f => { if (f.owned) passiveIncome += f.royalty; });
+      state.balance += (passiveIncome - totalSalaries);
+
+      if (state.balance > state.level * 10000000) state.level++;
+
+      state.todayBuyers = 0; state.todaySales = 0;
+      addLog("Hari " + state.day + " dimulai. Gaji dibayar: " + formatRp(totalSalaries), 'good');
+      saveGame();
+      renderAll();
+    }
+
+    function renderHeader() {
+      document.getElementById('time-display').innerText = (state.hour < 10 ? '0' : '') + state.hour + ":" + (state.minute === 0 ? '00' : state.minute) + " WIB | Hari " + state.day;
+    }
+
+    function renderAll() {
+      renderHeader();
+      document.getElementById('balance').innerText = formatRp(state.balance);
+      document.getElementById('level').innerText = state.level;
+      document.getElementById('reputation').innerText = Math.floor(state.reputation);
+      document.getElementById('branch-count').innerText = state.cities.filter(c => c.owned).length;
+      document.getElementById('today-buyers').innerText = state.todayBuyers;
+      document.getElementById('today-sales').innerText = formatRp(state.todaySales);
+
+      // Render Products
+      var pList = document.getElementById('product-list');
+      pList.innerHTML = state.products.map(p => `
+        <div class="card item-row">
+          <div>
+            <b>${p.name}</b><br>
+            <small style="color:#8A8A8A">Stok: ${p.stock} | Modal: ${formatRp(p.cost)}</small>
+          </div>
+          <div style="display:flex; gap:8px; align-items:center;">
+            <input type="number" value="${p.price}" onchange="updatePrice(${p.id}, this.value)">
+            <button class="btn" onclick="buyStock(${p.id})">+10 Stok</button>
+          </div>
+        </div>
+      `).join('');
+
+      // Render Employees
+      var eList = document.getElementById('employee-list');
+      eList.innerHTML = state.employees.map((e, idx) => `
+        <div class="card item-row">
+          <div><b>${e.name}</b> (${e.type})<br><small style="color:#8A8A8A">Gaji: ${formatRp(e.salary)}/hari | Lvl ${e.level}</small></div>
+          <div style="display:flex; gap:6px;">
+            <button class="btn" onclick="upgradeEmployee(${idx})">Upgrade</button>
+            <button class="btn btn-danger" onclick="fireEmployee(${idx})">Pecat</button>
+          </div>
+        </div>
+      `).join('');
+
+      // Render Logs & Reviews
+      document.getElementById('activity-log').innerHTML = state.logs.map(l => `<div class="log-item ${l.type}">${l.msg}</div>`).join('');
+      document.getElementById('review-list').innerHTML = state.reviews.map(r => `<div class="log-item ${r.type}"><b>[${r.time}]</b> "${r.msg}"</div>`).join('');
+
+      // Render Upgrades & Franchise
+      var uList = document.getElementById('upgrade-list');
+      uList.innerHTML = state.upgrades.map(u => `
+        <div class="card item-row">
+          <div><b>${u.name}</b><br><small style="color:#8A8A8A">${formatRp(u.cost)}</small></div>
+          <button class="btn" ${u.owned ? 'disabled' : ''} onclick="buyUpgrade('${u.id}')">${u.owned ? 'Milik' : 'Beli'}</button>
+        </div>
+      `).join('');
+
+      var fList = document.getElementById('franchise-section');
+      if (state.level < 3) {
+        fList.innerHTML = `<div class="locked-card">🔒 Fitur Franchise Terkunci.<br>Capai <b>Level 3</b> untuk membuka fitur kemitraan!</div>`;
+      } else {
+        fList.innerHTML = state.franchises.map(f => `
+          <div class="card item-row">
+            <div><b>${f.name}</b><br><small style="color:#8A8A8A">Harga: ${formatRp(f.cost)} | Pasif: +${formatRp(f.royalty)}/hari</small></div>
+            <button class="btn" ${f.owned ? 'disabled' : ''} onclick="buyFranchise('${f.id}')">${f.owned ? 'Aktif' : 'Beli Lisensi'}</button>
+          </div>
+        `).join('');
       }
     }
 
-    // RENDER EMPLOYEES TAB
-    function renderEmployees() {
-      const container = document.getElementById('employeeList');
-      if (!container) return;
+    function buyStock(id) {
+      var prod = state.products.find(p => p.id === id);
+      var cost = prod.cost * 10;
+      if (state.balance >= cost) {
+        state.balance -= cost; prod.stock += 10; renderAll();
+      } else alert("Saldo tidak cukup!");
+    }
 
-      container.innerHTML = gameState.employees.map(e => `
-        <div class="bg-white p-4 rounded-xl shadow-sm border border-gray-100 flex items-center justify-between">
-          <div class="flex items-center space-x-3">
-            <div class="w-10 h-10 rounded-full bg-blue-100 text-blue-600 flex items-center justify-center font-bold text-base">
-              <i class="fa-solid fa-user-tie"></i>
-            </div>
-            <div>
-              <h3 class="font-bold text-gray-800 text-sm">${e.name}</h3>
-              <p class="text-xs text-gray-500">${e.role} | Gaji: <span class="font-semibold text-gray-700">${formatRp(e.salary)}/hari</span></p>
-            </div>
-          </div>
-
-          <button onclick="fireEmployee(${e.id})" class="bg-red-50 hover:bg-red-100 text-red-600 px-3 py-1.5 rounded-lg text-xs font-bold border border-red-200 transition flex items-center gap-1">
-            <i class="fa-solid fa-user-minus"></i> Pecat
-          </button>
-        </div>
-      `).join('');
+    function updatePrice(id, val) {
+      var prod = state.products.find(p => p.id === id);
+      prod.price = parseInt(val) || prod.basePrice;
     }
 
     function hireEmployee() {
-      const randomRole = ROLES[Math.floor(Math.random() * ROLES.length)];
-      const randomName = RANDOM_NAMES[Math.floor(Math.random() * RANDOM_NAMES.length)] + ' ' + String.fromCharCode(65 + Math.floor(Math.random() * 26)) + '.';
-
-      const newEmp = {
-        id: Date.now(),
-        name: randomName,
-        role: randomRole.role,
-        salary: randomRole.salary,
-        speed: randomRole.speed
-      };
-
-      gameState.employees.push(newEmp);
-      addLog(`Merekrut karyawan baru: ${newEmp.name} (${newEmp.role})`, 'success');
-      updateUI();
-      renderEmployees();
-      saveGame();
+      if (state.balance < 500000) return alert("Saldo tidak cukup!");
+      state.balance -= 500000;
+      var names = ["Budi", "Siti", "Andi", "Rina", "Dedi", "Lina"];
+      var types = ["Kasir", "Pramuniaga", "Supervisor"];
+      var type = types[Math.floor(Math.random() * types.length)];
+      state.employees.push({ name: names[Math.floor(Math.random() * names.length)], type: type, salary: 150000, level: 1 });
+      renderAll();
     }
 
-    function fireEmployee(empId) {
-      const emp = gameState.employees.find(e => e.id === empId);
-      if (emp) {
-        gameState.employees = gameState.employees.filter(e => e.id !== empId);
-        addLog(`Memecat karyawan ${emp.name}`, 'warning');
-        updateUI();
-        renderEmployees();
-        saveGame();
+    function fireEmployee(idx) { state.employees.splice(idx, 1); renderAll(); }
+
+    function upgradeEmployee(idx) {
+      var emp = state.employees[idx];
+      if (state.balance >= 300000) {
+        state.balance -= 300000; emp.level++; emp.salary += 50000; renderAll();
+      } else alert("Saldo kurang!");
+    }
+
+    function buyUpgrade(id) {
+      var up = state.upgrades.find(u => u.id === id);
+      if (state.balance >= up.cost) {
+        state.balance -= up.cost; up.owned = true; renderAll();
       }
     }
 
-    // RENDER UPGRADES TAB
-    function renderUpgrades() {
-      const container = document.getElementById('upgradeList');
-      if (!container) return;
-
-      container.innerHTML = gameState.upgrades.map(u => `
-        <div class="bg-white p-4 rounded-xl shadow-sm border border-gray-100 flex flex-col justify-between space-y-3">
-          <div class="flex items-start space-x-3">
-            <div class="w-10 h-10 rounded-lg bg-purple-100 text-purple-600 flex items-center justify-center text-lg">
-              <i class="fa-solid ${u.icon}"></i>
-            </div>
-            <div class="flex-1">
-              <h3 class="font-bold text-gray-800 text-sm">${u.name}</h3>
-              <p class="text-xs text-gray-500">${u.desc}</p>
-            </div>
-          </div>
-
-          <button onclick="buyUpgrade('${u.id}')" ${u.bought ? 'disabled' : ''} class="w-full py-2 rounded-lg text-xs font-bold transition shadow-sm ${
-            u.bought ? 'bg-gray-100 text-gray-400 cursor-not-allowed' : 'bg-grab-green hover:bg-grab-darkGreen text-white'
-          }">
-            ${u.bought ? 'Sudah Dibeli' : `Beli Upgrade (${formatRp(u.cost)})`}
-          </button>
-        </div>
-      `).join('');
-    }
-
-    function buyUpgrade(upgradeId) {
-      const up = gameState.upgrades.find(u => u.id === upgradeId);
-      if (up && !up.bought) {
-        if (gameState.saldo >= up.cost) {
-          gameState.saldo -= up.cost;
-          up.bought = true;
-          addLog(`Membeli Upgrade Toko: ${up.name}`, 'success');
-          updateUI();
-          renderUpgrades();
-          saveGame();
-        } else {
-          alert('Saldo kas tidak mencukupi untuk upgrade ini!');
-        }
+    function buyFranchise(id) {
+      var f = state.franchises.find(x => x.id === id);
+      if (state.balance >= f.cost) {
+        state.balance -= f.cost; f.owned = true; renderAll();
       }
     }
 
-    // INITIALIZE & RENDER LEAFLET MAP
-    function initMap() {
-      if (leafletMap) return;
-
-      leafletMap = L.map('map').setView([-2.5, 118.0], 5);
-
-      L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-        attribution: '&copy; OpenStreetMap contributors'
-      }).addTo(leafletMap);
-
-      renderMapMarkers();
-    }
-
-    function renderMapMarkers() {
-      if (!leafletMap) return;
-
-      gameState.cities.forEach(city => {
-        const markerColor = city.unlocked ? '#00B14F' : '#E63946';
-
-        const customIcon = L.divIcon({
-          className: 'custom-div-icon',
-          html: `<div style="background-color: ${markerColor}; width: 18px; height: 18px; border-radius: 50%; border: 3px solid white; shadow: 0 2px 4px rgba(0,0,0,0.3);"></div>`,
-          iconSize: [18, 18],
-          iconAnchor: [9, 9]
-        });
-
-        if (mapMarkers[city.id]) {
-          leafletMap.removeLayer(mapMarkers[city.id]);
-        }
-
-        const marker = L.marker(city.coords, { icon: customIcon }).addTo(leafletMap);
-        
-        marker.bindPopup(`
-          <div class="p-1 text-center">
-            <h4 class="font-bold text-sm text-gray-800">${city.name}</h4>
-            <p class="text-xs text-gray-500">Multiplier Omzet: ${city.multiplier}x</p>
-            <p class="text-xs font-semibold my-1">${city.unlocked ? '<span class="text-green-600">Cabang Aktif</span>' : formatRp(city.cost)}</p>
-            ${!city.unlocked ? `<button onclick="unlockBranch('${city.id}')" class="bg-grab-green text-white px-2 py-1 rounded text-xs font-bold mt-1">Buka Cabang</button>` : ''}
-          </div>
-        `);
-
-        mapMarkers[city.id] = marker;
-      });
-
-      renderCitiesList();
-    }
-
-    function renderCitiesList() {
-      const container = document.getElementById('cityList');
-      if (!container) return;
-
-      container.innerHTML = gameState.cities.map(c => `
-        <div class="bg-white p-3.5 rounded-xl shadow-sm border border-gray-100 flex items-center justify-between">
-          <div>
-            <h3 class="font-bold text-gray-800 text-sm flex items-center gap-1.5">
-              <i class="fa-solid fa-building-circle-check ${c.unlocked ? 'text-grab-green' : 'text-gray-300'}"></i>
-              ${c.name}
-            </h3>
-            <p class="text-xs text-gray-400">Bonus Omzet: ${c.multiplier}x</p>
-          </div>
-
-          ${c.unlocked ? 
-            `<span class="bg-green-100 text-grab-darkGreen px-2.5 py-1 rounded-full text-xs font-bold">Aktif</span>` : 
-            `<button onclick="unlockBranch('${c.id}')" class="bg-grab-green hover:bg-grab-darkGreen text-white px-3 py-1.5 rounded-lg text-xs font-bold transition shadow-sm">
-              Buka (${formatRp(c.cost)})
-            </button>`
-          }
-        </div>
-      `).join('');
-    }
-
-    function unlockBranch(cityId) {
-      const city = gameState.cities.find(c => c.id === cityId);
-      if (city && !city.unlocked) {
-        if (gameState.saldo >= city.cost) {
-          gameState.saldo -= city.cost;
-          city.unlocked = true;
-          addLog(`Membuka cabang baru di ${city.name}!`, 'success');
-          updateUI();
-          renderMapMarkers();
-          saveGame();
-        } else {
-          alert('Saldo kas tidak cukup untuk membuka cabang di kota ini!');
-        }
-      }
-    }
-
-    // UPDATE GLOBAL UI TEXTS
-    function updateUI() {
-      document.getElementById('saldoText').innerText = formatRp(gameState.saldo);
-      document.getElementById('levelText').innerText = gameState.level;
-      document.getElementById('reputasiText').innerText = Math.round(gameState.reputasi) + '%';
-      document.getElementById('headerDayText').innerText = `Hari ke-${gameState.hari}`;
-
-      // Clock Display
-      const timeStr = `${String(gameState.jam).padStart(2, '0')}:${String(gameState.menit).padStart(2, '0')}`;
-      document.getElementById('clockDisplay').innerText = timeStr;
-
-      // Progress bar calculation (08:00 to 22:00 = 14 hours = 840 mins)
-      const currentMins = ((gameState.jam - 8) * 60) + gameState.menit;
-      const pct = Math.min(100, Math.max(0, (currentMins / 840) * 100));
-      document.getElementById('dayProgressBar').style.width = pct + '%';
-
-      // Stats counters
-      document.getElementById('statPembeli').innerText = `${gameState.pembeliHariIni} Orang`;
-      document.getElementById('statPenjualan').innerText = formatRp(gameState.penjualanHariIni);
-
-      // Branch & Salary counts
-      const activeBranches = gameState.cities.filter(c => c.unlocked).length;
-      document.getElementById('cabangCountText').innerText = `${activeBranches} Toko`;
-
-      const totalGaji = gameState.employees.reduce((sum, e) => sum + e.salary, 0);
-      document.getElementById('totalGajiText').innerText = formatRp(totalGaji);
-    }
-
-    // TAB NAVIGATION
     function switchTab(tabId) {
-      document.querySelectorAll('.tab-content').forEach(tab => tab.classList.add('hidden'));
-      document.querySelectorAll('.nav-item').forEach(nav => {
-        nav.classList.remove('text-grab-green', 'active');
-        nav.classList.add('text-gray-400');
+      document.querySelectorAll('.tab-content').forEach(t => t.classList.remove('active'));
+      document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
+      document.getElementById('tab-' + tabId).classList.add('active');
+      if (state.map && tabId === 'peta') setTimeout(() => state.map.invalidateSize(), 200);
+    }
+
+    function initMap() {
+      state.map = L.map('map').setView([-2.5, 118.0], 4);
+      L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png').addTo(state.map);
+      state.cities.forEach(c => {
+        var marker = L.marker([c.lat, c.lng]).addTo(state.map)
+          .bindPopup(`<b>${c.name}</b><br>Biaya: ${formatRp(c.cost)}<br><button class="btn" onclick="buyCity('${c.id}')">Buka Cabang</button>`);
       });
-
-      const activeTab = document.getElementById(`tab-${tabId}`);
-      const activeNav = document.getElementById(`nav-${tabId}`);
-
-      if (activeTab) activeTab.classList.remove('hidden');
-      if (activeNav) {
-        activeNav.classList.add('text-grab-green', 'active');
-        activeNav.classList.remove('text-gray-400');
-      }
-
-      if (tabId === 'peta') {
-        setTimeout(() => {
-          initMap();
-          if (leafletMap) leafletMap.invalidateSize();
-        }, 100);
-      }
     }
 
-    // SAVE & LOAD STATE
-    function saveGame() {
-      localStorage.setItem('indoManagerSave', JSON.stringify(gameState));
+    function buyCity(id) {
+      var c = state.cities.find(x => x.id === id);
+      if (c.owned) return alert("Sudah dibuka!");
+      if (state.balance >= c.cost) {
+        state.balance -= c.cost; c.owned = true; renderAll(); alert("Cabang " + c.name + " Berhasil Dibuka!");
+      } else alert("Saldo kurang!");
     }
 
-    function resetGame() {
-      if (confirm('Apakah Anda yakin ingin mereset seluruh progres minimarket?')) {
-        localStorage.removeItem('indoManagerSave');
-        gameState = JSON.parse(JSON.stringify(DEFAULT_STATE));
-        updateUI();
-        renderProducts();
-        renderEmployees();
-        renderUpgrades();
-        renderLogs();
-        if (leafletMap) renderMapMarkers();
-        addLog('Game berhasil di-reset!', 'warning');
-      }
+    function saveGame() { localStorage.setItem('indoManagerSave', JSON.stringify(state)); }
+    function loadGame() {
+      var saved = localStorage.getItem('indoManagerSave');
+      if (saved) { var obj = JSON.parse(saved); Object.assign(state, obj); }
     }
 
-    // AUTO SAVE EVERY 10 SECONDS
-    setInterval(saveGame, 10000);
-
-    window.onload = function() {
-      updateUI();
-      renderProducts();
-      renderEmployees();
-      renderUpgrades();
-      renderLogs();
-      startClockEngine();
-    };
+    window.onload = init;
   </script>
 </body>
 </html>
