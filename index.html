@@ -36,7 +36,7 @@
     .btn-danger { background: #E63946; }
     .btn-secondary { background: #F5F5F5; color: #1A1A1A; border: 1px solid #E5E5E5; }
     .btn:disabled { opacity: 0.5; cursor: not-allowed; }
-    #map { height: 300px; width: 100%; border-radius: 12px; margin-bottom: 16px; }
+    #map { height: 300px; width: 100%; border-radius: 12px; margin-bottom: 16px; z-index: 1; }
     .log-list { max-height: 200px; overflow-y: auto; font-size: 12px; }
     .log-item { padding: 6px 0; border-bottom: 1px solid #F5F5F5; color: #8A8A8A; }
     .log-item.good { color: #00880A; }
@@ -169,7 +169,7 @@
   <script>
     var state = {
       balance: 5000000, level: 1, reputation: 50, day: 1, hour: 8, minute: 0,
-      todayBuyers: 0, todaySales: 0, speed: 1, isPaused: false,
+      todayBuyers: 0, todaySales: 0, speed: 1,
       products: [
         { id: 1, name: "Aqua 600ml", cost: 2500, price: 4000, basePrice: 4000, stock: 100 },
         { id: 2, name: "Indomie Goreng", cost: 2500, price: 3500, basePrice: 3500, stock: 200 },
@@ -194,7 +194,7 @@
         { id: 'f1', name: "Franchise Tier 1 (Kios Mini)", cost: 10000000, royalty: 300000, owned: false },
         { id: 'f2', name: "Franchise Tier 2 (Super Store)", cost: 25000000, royalty: 800000, owned: false }
       ],
-      logs: [], reviews: [], map: null, mapMarkers: {}
+      logs: [], reviews: [], map: null, timerId: null
     };
 
     var customerComments = {
@@ -213,16 +213,23 @@
     }
 
     function startGameloop() {
-      setInterval(function() {
-        if (state.speed === 0) return;
+      if (state.timerId) clearInterval(state.timerId);
+      if (state.speed === 0) return;
+      
+      var interval = 1000 / state.speed;
+      state.timerId = setInterval(function() {
         state.minute += 10;
         if (state.minute >= 60) {
-          state.minute = 0; state.hour++;
-          if (state.hour >= 22) { nextDay(); state.hour = 8; }
+          state.minute = 0;
+          state.hour++;
+          if (state.hour >= 22) { 
+            nextDay(); 
+            state.hour = 8; 
+          }
         }
         spawnCustomer();
         renderHeader();
-      }, 1000 / (state.speed || 1));
+      }, interval);
     }
 
     function spawnCustomer() {
@@ -262,7 +269,7 @@
     }
 
     function addReview(msg, type) {
-      state.reviews.unshift({ msg: msg, type: type, time: state.hour + ":" + (state.minute || '00') });
+      state.reviews.unshift({ msg: msg, type: type, time: (state.hour < 10 ? '0' : '') + state.hour + ":" + (state.minute === 0 ? '00' : state.minute) });
       if (state.reviews.length > 30) state.reviews.pop();
     }
 
@@ -270,6 +277,7 @@
       state.speed = sp;
       document.querySelectorAll('.speed-btn').forEach(b => b.classList.remove('active'));
       if(btnElement) btnElement.classList.add('active');
+      startGameloop();
     }
 
     function nextDay() {
@@ -283,7 +291,8 @@
 
       if (state.balance > state.level * 10000000) state.level++;
 
-      state.todayBuyers = 0; state.todaySales = 0;
+      state.todayBuyers = 0; 
+      state.todaySales = 0;
       addLog("Hari " + state.day + " dimulai. Gaji dibayar: " + formatRp(totalSalaries), 'good');
       saveGame();
       renderAll();
@@ -302,56 +311,64 @@
       document.getElementById('today-buyers').innerText = state.todayBuyers;
       document.getElementById('today-sales').innerText = formatRp(state.todaySales);
 
-      // Render Products
+      // Products
       var pList = document.getElementById('product-list');
-      pList.innerHTML = state.products.map(p => `
-        <div class="card item-row">
-          <div>
-            <b>${p.name}</b><br>
-            <small style="color:#8A8A8A">Stok: ${p.stock} | Modal: ${formatRp(p.cost)}</small>
+      if (pList) {
+        pList.innerHTML = state.products.map(p => `
+          <div class="card item-row">
+            <div>
+              <b>${p.name}</b><br>
+              <small style="color:#8A8A8A">Stok: ${p.stock} | Modal: ${formatRp(p.cost)}</small>
+            </div>
+            <div style="display:flex; gap:8px; align-items:center;">
+              <input type="number" value="${p.price}" onchange="updatePrice(${p.id}, this.value)">
+              <button class="btn" onclick="buyStock(${p.id})">+10 Stok</button>
+            </div>
           </div>
-          <div style="display:flex; gap:8px; align-items:center;">
-            <input type="number" value="${p.price}" onchange="updatePrice(${p.id}, this.value)">
-            <button class="btn" onclick="buyStock(${p.id})">+10 Stok</button>
-          </div>
-        </div>
-      `).join('');
+        `).join('');
+      }
 
-      // Render Employees
+      // Employees
       var eList = document.getElementById('employee-list');
-      eList.innerHTML = state.employees.map((e, idx) => `
-        <div class="card item-row">
-          <div><b>${e.name}</b> (${e.type})<br><small style="color:#8A8A8A">Gaji: ${formatRp(e.salary)}/hari | Lvl ${e.level}</small></div>
-          <div style="display:flex; gap:6px;">
-            <button class="btn" onclick="upgradeEmployee(${idx})">Upgrade</button>
-            <button class="btn btn-danger" onclick="fireEmployee(${idx})">Pecat</button>
+      if (eList) {
+        eList.innerHTML = state.employees.map((e, idx) => `
+          <div class="card item-row">
+            <div><b>${e.name}</b> (${e.type})<br><small style="color:#8A8A8A">Gaji: ${formatRp(e.salary)}/hari | Lvl ${e.level}</small></div>
+            <div style="display:flex; gap:6px;">
+              <button class="btn" onclick="upgradeEmployee(${idx})">Upgrade</button>
+              <button class="btn btn-danger" onclick="fireEmployee(${idx})">Pecat</button>
+            </div>
           </div>
-        </div>
-      `).join('');
+        `).join('');
+      }
 
-      // Render Logs & Reviews
+      // Logs & Reviews
       document.getElementById('activity-log').innerHTML = state.logs.map(l => `<div class="log-item ${l.type}">${l.msg}</div>`).join('');
       document.getElementById('review-list').innerHTML = state.reviews.map(r => `<div class="log-item ${r.type}"><b>[${r.time}]</b> "${r.msg}"</div>`).join('');
 
-      // Render Upgrades & Franchise
+      // Upgrades & Franchise
       var uList = document.getElementById('upgrade-list');
-      uList.innerHTML = state.upgrades.map(u => `
-        <div class="card item-row">
-          <div><b>${u.name}</b><br><small style="color:#8A8A8A">${formatRp(u.cost)}</small></div>
-          <button class="btn" ${u.owned ? 'disabled' : ''} onclick="buyUpgrade('${u.id}')">${u.owned ? 'Milik' : 'Beli'}</button>
-        </div>
-      `).join('');
-
-      var fList = document.getElementById('franchise-section');
-      if (state.level < 3) {
-        fList.innerHTML = `<div class="locked-card">Fitur Franchise Terkunci.<br>Capai <b>Level 3</b> untuk membuka fitur kemitraan.</div>`;
-      } else {
-        fList.innerHTML = state.franchises.map(f => `
+      if (uList) {
+        uList.innerHTML = state.upgrades.map(u => `
           <div class="card item-row">
-            <div><b>${f.name}</b><br><small style="color:#8A8A8A">Harga: ${formatRp(f.cost)} | Pasif: +${formatRp(f.royalty)}/hari</small></div>
-            <button class="btn" ${f.owned ? 'disabled' : ''} onclick="buyFranchise('${f.id}')">${f.owned ? 'Aktif' : 'Beli Lisensi'}</button>
+            <div><b>${u.name}</b><br><small style="color:#8A8A8A">${formatRp(u.cost)}</small></div>
+            <button class="btn" ${u.owned ? 'disabled' : ''} onclick="buyUpgrade('${u.id}')">${u.owned ? 'Milik' : 'Beli'}</button>
           </div>
         `).join('');
+      }
+
+      var fList = document.getElementById('franchise-section');
+      if (fList) {
+        if (state.level < 3) {
+          fList.innerHTML = `<div class="locked-card">Fitur Franchise Terkunci.<br>Capai <b>Level 3</b> untuk membuka fitur kemitraan.</div>`;
+        } else {
+          fList.innerHTML = state.franchises.map(f => `
+            <div class="card item-row">
+              <div><b>${f.name}</b><br><small style="color:#8A8A8A">Harga: ${formatRp(f.cost)} | Pasif: +${formatRp(f.royalty)}/hari</small></div>
+              <button class="btn" ${f.owned ? 'disabled' : ''} onclick="buyFranchise('${f.id}')">${f.owned ? 'Aktif' : 'Beli Lisensi'}</button>
+            </div>
+          `).join('');
+        }
       }
     }
 
@@ -405,33 +422,57 @@
       document.querySelectorAll('.tab-content').forEach(t => t.classList.remove('active'));
       document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
       document.getElementById('tab-' + tabId).classList.add('active');
-      if (state.map && tabId === 'peta') setTimeout(() => state.map.invalidateSize(), 200);
+      
+      // Update tombol aktif di bottom nav
+      var navBtns = document.querySelectorAll('.nav-item');
+      navBtns.forEach(btn => {
+        if (btn.getAttribute('onclick').includes(tabId)) {
+          btn.classList.add('active');
+        }
+      });
+
+      if (tabId === 'peta' && state.map) {
+        setTimeout(function() { state.map.invalidateSize(); }, 200);
+      }
     }
 
     function initMap() {
+      var mapElem = document.getElementById('map');
+      if (!mapElem) return;
       state.map = L.map('map').setView([-2.5, 118.0], 4);
       L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png').addTo(state.map);
+      
       state.cities.forEach(c => {
-        var marker = L.marker([c.lat, c.lng]).addTo(state.map)
-          .bindPopup(`<b>${c.name}</b><br>Biaya: ${formatRp(c.cost)}<br><button class="btn" onclick="buyCity('${c.id}')">Buka Cabang</button>`);
+        L.marker([c.lat, c.lng]).addTo(state.map)
+          .bindPopup(`<b>${c.name}</b><br>Biaya: ${formatRp(c.cost)}<br><br><button class="btn" onclick="buyCity('${c.id}')">Buka Cabang</button>`);
       });
     }
 
     function buyCity(id) {
       var c = state.cities.find(x => x.id === id);
-      if (c.owned) return alert("Sudah dibuka!");
+      if (c.owned) return alert("Cabang di kota ini sudah aktif!");
       if (state.balance >= c.cost) {
-        state.balance -= c.cost; c.owned = true; renderAll(); alert("Cabang " + c.name + " Berhasil Dibuka!");
-      } else alert("Saldo kurang!");
+        state.balance -= c.cost; 
+        c.owned = true; 
+        renderAll(); 
+        alert("Selamat! Cabang " + c.name + " berhasil dibuka!");
+      } else alert("Saldo Anda kurang untuk membuka cabang di " + c.name);
     }
 
     function saveGame() { localStorage.setItem('indoManagerSave', JSON.stringify(state)); }
     function loadGame() {
       var saved = localStorage.getItem('indoManagerSave');
-      if (saved) { var obj = JSON.parse(saved); Object.assign(state, obj); }
+      if (saved) { 
+        try {
+          var obj = JSON.parse(saved); 
+          Object.assign(state, obj); 
+        } catch(e){}
+      }
     }
 
-    window.onload = init;
+    document.addEventListener("DOMContentLoaded", function() {
+      init();
+    });
   </script>
 </body>
 </html>
