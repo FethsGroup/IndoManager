@@ -1,0 +1,874 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>IndoManager - Simulasi Manajer Minimarket Indonesia</title>
+  
+  <!-- Tailwind CSS CDN -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  
+  <!-- Leaflet CSS & JS -->
+  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+  <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+
+  <!-- Font Awesome Icons -->
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" />
+
+  <!-- Google Font: Inter -->
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+
+  <script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          fontFamily: {
+            sans: ['Inter', 'sans-serif'],
+          },
+          colors: {
+            grab: {
+              green: '#00B14F',
+              darkGreen: '#00880A',
+              lightBg: '#F5F5F5',
+              accentBg: '#E8F8EE',
+              card: '#FFFFFF',
+              darkText: '#1C1C1C'
+            }
+          }
+        }
+      }
+    }
+  </script>
+
+  <style>
+    body {
+      font-family: 'Inter', sans-serif;
+      background-color: #f4f5f7;
+      color: #1c1c1c;
+      -webkit-tap-highlight-color: transparent;
+    }
+    .custom-scroll::-webkit-scrollbar {
+      width: 4px;
+      height: 4px;
+    }
+    .custom-scroll::-webkit-scrollbar-thumb {
+      background: #cbd5e1;
+      border-radius: 4px;
+    }
+    .grab-gradient {
+      background: linear-gradient(135deg, #00B14F 0%, #00880A 100%);
+    }
+    .pulse-animation {
+      animation: pulse 2s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+    }
+    @keyframes pulse {
+      0%, 100% { opacity: 1; }
+      50% { opacity: .5; }
+    }
+  </style>
+</head>
+<body class="bg-gray-100 flex flex-col min-h-screen pb-20 md:pb-6 select-none">
+
+  <!-- HEADER TOKO -->
+  <header class="bg-white sticky top-0 z-40 border-b border-gray-200 shadow-sm">
+    <div class="max-w-md md:max-w-4xl mx-auto px-4 py-3 flex items-center justify-between">
+      <div class="flex items-center space-x-3">
+        <div class="w-10 h-10 rounded-full bg-grab-green text-white flex items-center justify-center font-bold text-lg shadow-md">
+          <i class="fa-solid fa-store"></i>
+        </div>
+        <div>
+          <div class="text-xs text-gray-500 font-medium">Selamat Datang,</div>
+          <h1 class="text-base font-bold text-gray-800 leading-tight">Manager Minimarket</h1>
+        </div>
+      </div>
+      <div class="flex items-center space-x-2">
+        <button onclick="resetGame()" title="Reset Progres" class="p-2 text-gray-400 hover:text-red-500 rounded-lg hover:bg-gray-100 transition">
+          <i class="fa-solid fa-rotate-right"></i>
+        </button>
+        <div class="bg-grab-accentBg border border-grab-green/30 text-grab-darkGreen px-3 py-1 rounded-full text-xs font-bold flex items-center gap-1.5">
+          <span class="w-2 h-2 rounded-full bg-grab-green pulse-animation"></span>
+          <span id="headerDayText">Hari ke-1</span>
+        </div>
+      </div>
+    </div>
+  </header>
+
+  <!-- MAIN CONTAINER -->
+  <main class="max-w-md md:max-w-4xl mx-auto w-full px-4 pt-4 flex-1">
+
+    <!-- TAB 1: DASHBOARD / HOME -->
+    <section id="tab-dashboard" class="tab-content space-y-4">
+      
+      <!-- SALDO & REPUTASI CARD (GRAB STYLE) -->
+      <div class="grab-gradient rounded-2xl p-5 text-white shadow-lg relative overflow-hidden">
+        <div class="absolute -right-4 -bottom-4 opacity-10 text-8xl">
+          <i class="fa-solid fa-cash-register"></i>
+        </div>
+        <div class="flex justify-between items-start mb-2">
+          <div>
+            <p class="text-xs text-green-100 uppercase tracking-wider font-semibold">Total Saldo Kas</p>
+            <h2 id="saldoText" class="text-3xl font-extrabold tracking-tight mt-0.5">Rp 10.000.000</h2>
+          </div>
+          <span class="bg-white/20 backdrop-blur-md px-3 py-1 rounded-full text-xs font-bold border border-white/30">
+            Level <span id="levelText">1</span>
+          </span>
+        </div>
+
+        <div class="grid grid-cols-3 gap-2 mt-4 pt-3 border-t border-white/20 text-center">
+          <div>
+            <p class="text-[10px] text-green-100 uppercase font-medium">Reputasi Toko</p>
+            <p class="text-sm font-bold mt-0.5 flex items-center justify-center gap-1">
+              <i class="fa-solid fa-star text-yellow-300 text-xs"></i>
+              <span id="reputasiText">100%</span>
+            </p>
+          </div>
+          <div>
+            <p class="text-[10px] text-green-100 uppercase font-medium">Total Cabang</p>
+            <p class="text-sm font-bold mt-0.5" id="cabangCountText">1 Toko</p>
+          </div>
+          <div>
+            <p class="text-[10px] text-green-100 uppercase font-medium">Gaji Karyawan/Hari</p>
+            <p class="text-sm font-bold mt-0.5" id="totalGajiText">Rp 100.000</p>
+          </div>
+        </div>
+      </div>
+
+      <!-- REALTIME CLOCK & SPEED CONTROLLER -->
+      <div class="bg-white rounded-xl p-4 shadow-sm border border-gray-100">
+        <div class="flex items-center justify-between mb-3">
+          <div class="flex items-center gap-2">
+            <i class="fa-regular fa-clock text-grab-green text-lg"></i>
+            <div>
+              <span class="text-xs text-gray-400 font-medium block">Jam Operasional (08:00 - 22:00)</span>
+              <span id="clockDisplay" class="text-xl font-extrabold text-gray-800 tracking-wider">08:00</span>
+            </div>
+          </div>
+          
+          <!-- TIME SPEED BUTTONS -->
+          <div class="flex bg-gray-100 p-1 rounded-lg gap-1 border border-gray-200">
+            <button onclick="setSpeed(0)" id="btnSpeed0" class="speed-btn px-2.5 py-1 text-xs font-bold rounded-md transition text-gray-600 hover:bg-white">PAUSE</button>
+            <button onclick="setSpeed(1)" id="btnSpeed1" class="speed-btn px-2.5 py-1 text-xs font-bold rounded-md bg-grab-green text-white shadow-sm transition">1x</button>
+            <button onclick="setSpeed(2)" id="btnSpeed2" class="speed-btn px-2.5 py-1 text-xs font-bold rounded-md transition text-gray-600 hover:bg-white">2x</button>
+            <button onclick="setSpeed(5)" id="btnSpeed5" class="speed-btn px-2.5 py-1 text-xs font-bold rounded-md transition text-gray-600 hover:bg-white">5x</button>
+            <button onclick="setSpeed(10)" id="btnSpeed10" class="speed-btn px-2.5 py-1 text-xs font-bold rounded-md transition text-gray-600 hover:bg-white">10x</button>
+          </div>
+        </div>
+
+        <!-- PROGRESS BAR WAKTU -->
+        <div class="w-full bg-gray-100 h-2 rounded-full overflow-hidden">
+          <div id="dayProgressBar" class="bg-grab-green h-full w-0 transition-all duration-300"></div>
+        </div>
+      </div>
+
+      <!-- COUNTER KINERJA HARI INI -->
+      <div class="grid grid-cols-2 gap-3">
+        <div class="bg-white p-3.5 rounded-xl border border-gray-100 shadow-sm flex items-center space-x-3">
+          <div class="w-10 h-10 rounded-xl bg-blue-50 text-blue-600 flex items-center justify-center text-lg">
+            <i class="fa-solid fa-users"></i>
+          </div>
+          <div>
+            <p class="text-xs text-gray-500 font-medium">Pembeli Hari Ini</p>
+            <p id="statPembeli" class="text-lg font-extrabold text-gray-800">0 Orang</p>
+          </div>
+        </div>
+
+        <div class="bg-white p-3.5 rounded-xl border border-gray-100 shadow-sm flex items-center space-x-3">
+          <div class="w-10 h-10 rounded-xl bg-emerald-50 text-emerald-600 flex items-center justify-center text-lg">
+            <i class="fa-solid fa-wallet"></i>
+          </div>
+          <div>
+            <p class="text-xs text-gray-500 font-medium">Penjualan Hari Ini</p>
+            <p id="statPenjualan" class="text-lg font-extrabold text-gray-800">Rp 0</p>
+          </div>
+        </div>
+      </div>
+
+      <!-- QUICK ACTIONS GRID -->
+      <div class="grid grid-cols-4 gap-2">
+        <button onclick="switchTab('toko')" class="bg-white hover:bg-grab-accentBg p-3 rounded-xl border border-gray-100 shadow-sm flex flex-col items-center justify-center group transition">
+          <div class="w-10 h-10 rounded-full bg-emerald-100 text-grab-green flex items-center justify-center text-lg mb-1 group-hover:scale-110 transition-transform">
+            <i class="fa-solid fa-boxes-stacked"></i>
+          </div>
+          <span class="text-xs font-semibold text-gray-700">Toko</span>
+        </button>
+
+        <button onclick="switchTab('karyawan')" class="bg-white hover:bg-grab-accentBg p-3 rounded-xl border border-gray-100 shadow-sm flex flex-col items-center justify-center group transition">
+          <div class="w-10 h-10 rounded-full bg-blue-100 text-blue-600 flex items-center justify-center text-lg mb-1 group-hover:scale-110 transition-transform">
+            <i class="fa-solid fa-user-gear"></i>
+          </div>
+          <span class="text-xs font-semibold text-gray-700">Karyawan</span>
+        </button>
+
+        <button onclick="switchTab('peta')" class="bg-white hover:bg-grab-accentBg p-3 rounded-xl border border-gray-100 shadow-sm flex flex-col items-center justify-center group transition">
+          <div class="w-10 h-10 rounded-full bg-amber-100 text-amber-600 flex items-center justify-center text-lg mb-1 group-hover:scale-110 transition-transform">
+            <i class="fa-solid fa-map-location-dot"></i>
+          </div>
+          <span class="text-xs font-semibold text-gray-700">Peta Cabang</span>
+        </button>
+
+        <button onclick="switchTab('upgrade')" class="bg-white hover:bg-grab-accentBg p-3 rounded-xl border border-gray-100 shadow-sm flex flex-col items-center justify-center group transition">
+          <div class="w-10 h-10 rounded-full bg-purple-100 text-purple-600 flex items-center justify-center text-lg mb-1 group-hover:scale-110 transition-transform">
+            <i class="fa-solid fa-circle-up"></i>
+          </div>
+          <span class="text-xs font-semibold text-gray-700">Upgrade</span>
+        </button>
+      </div>
+
+      <!-- LIVE ACTIVITY LOG -->
+      <div class="bg-white rounded-xl p-4 shadow-sm border border-gray-100">
+        <div class="flex items-center justify-between mb-3">
+          <h3 class="font-bold text-gray-800 text-sm flex items-center gap-2">
+            <i class="fa-solid fa-list-check text-grab-green"></i> Log Aktivitas Real-Time
+          </h3>
+          <span class="text-[10px] text-gray-400 font-medium">Maksimal 50 Aktivitas</span>
+        </div>
+        <div id="activityLog" class="h-48 overflow-y-auto custom-scroll space-y-2 pr-1 text-xs">
+          <div class="text-gray-400 text-center py-8">Belum ada aktivitas tercatat...</div>
+        </div>
+      </div>
+
+    </section>
+
+    <!-- TAB 2: TOKO & INVENTORY & DYNAMIC PRICING -->
+    <section id="tab-toko" class="tab-content hidden space-y-4">
+      <div class="bg-white p-4 rounded-xl shadow-sm border border-gray-100 flex justify-between items-center">
+        <div>
+          <h2 class="font-bold text-gray-800 text-base">Stok & Dynamic Pricing</h2>
+          <p class="text-xs text-gray-500">Atur harga jual barang. Harga wajar meningkatkan minat pembeli!</p>
+        </div>
+      </div>
+
+      <div id="productList" class="grid grid-cols-1 md:grid-cols-2 gap-3">
+        <!-- Products populated by JS -->
+      </div>
+    </section>
+
+    <!-- TAB 3: KARYAWAN MANAGEMENT (WITH FIRE OPTION) -->
+    <section id="tab-karyawan" class="tab-content hidden space-y-4">
+      <div class="bg-white p-4 rounded-xl shadow-sm border border-gray-100 flex justify-between items-center">
+        <div>
+          <h2 class="font-bold text-gray-800 text-base">Manajemen Karyawan</h2>
+          <p class="text-xs text-gray-500">Karyawan mempercepat transaksi & menurunkan risiko stok habis.</p>
+        </div>
+        <button onclick="hireEmployee()" class="bg-grab-green hover:bg-grab-darkGreen text-white px-3 py-1.5 rounded-lg text-xs font-bold transition shadow-sm flex items-center gap-1">
+          <i class="fa-solid fa-plus"></i> Rekrut Baru
+        </button>
+      </div>
+
+      <div id="employeeList" class="space-y-3">
+        <!-- Employees populated by JS -->
+      </div>
+    </section>
+
+    <!-- TAB 4: PETA & BUKA CABANG (LEAFLET) -->
+    <section id="tab-peta" class="tab-content hidden space-y-4">
+      <div class="bg-white p-4 rounded-xl shadow-sm border border-gray-100">
+        <h2 class="font-bold text-gray-800 text-base">Peta Cabang Minimarket</h2>
+        <p class="text-xs text-gray-500">Ekspansi jaringan toko Anda ke kota-kota besar di Indonesia!</p>
+      </div>
+
+      <!-- MAP CONTAINER -->
+      <div class="bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden">
+        <div id="map" class="w-full h-64 md:h-80 z-10"></div>
+      </div>
+
+      <!-- CITIES LIST -->
+      <div id="cityList" class="grid grid-cols-1 md:grid-cols-2 gap-3">
+        <!-- Cities populated by JS -->
+      </div>
+    </section>
+
+    <!-- TAB 5: UPGRADE TOKO -->
+    <section id="tab-upgrade" class="tab-content hidden space-y-4">
+      <div class="bg-white p-4 rounded-xl shadow-sm border border-gray-100">
+        <h2 class="font-bold text-gray-800 text-base">Fasilitas & Upgrade Toko</h2>
+        <p class="text-xs text-gray-500">Tingkatkan kenyamanan pelanggan dan reputasi usaha Anda.</p>
+      </div>
+
+      <div id="upgradeList" class="grid grid-cols-1 md:grid-cols-2 gap-3">
+        <!-- Upgrades populated by JS -->
+      </div>
+    </section>
+
+  </main>
+
+  <!-- BOTTOM NAVIGATION BAR (GRAB STYLE) -->
+  <nav class="fixed bottom-0 left-0 right-0 bg-white border-t border-gray-200 z-50 shadow-lg">
+    <div class="max-w-md md:max-w-md mx-auto grid grid-cols-5 h-16">
+      <button onclick="switchTab('dashboard')" id="nav-dashboard" class="nav-item active text-grab-green flex flex-col items-center justify-center space-y-1">
+        <i class="fa-solid fa-house text-lg"></i>
+        <span class="text-[10px] font-bold">Utama</span>
+      </button>
+
+      <button onclick="switchTab('toko')" id="nav-toko" class="nav-item text-gray-400 hover:text-grab-green flex flex-col items-center justify-center space-y-1">
+        <i class="fa-solid fa-store text-lg"></i>
+        <span class="text-[10px] font-bold">Toko</span>
+      </button>
+
+      <button onclick="switchTab('karyawan')" id="nav-karyawan" class="nav-item text-gray-400 hover:text-grab-green flex flex-col items-center justify-center space-y-1">
+        <i class="fa-solid fa-users text-lg"></i>
+        <span class="text-[10px] font-bold">Karyawan</span>
+      </button>
+
+      <button onclick="switchTab('peta')" id="nav-peta" class="nav-item text-gray-400 hover:text-grab-green flex flex-col items-center justify-center space-y-1">
+        <i class="fa-solid fa-map text-lg"></i>
+        <span class="text-[10px] font-bold">Peta</span>
+      </button>
+
+      <button onclick="switchTab('upgrade')" id="nav-upgrade" class="nav-item text-gray-400 hover:text-grab-green flex flex-col items-center justify-center space-y-1">
+        <i class="fa-solid fa-rocket text-lg"></i>
+        <span class="text-[10px] font-bold">Upgrade</span>
+      </button>
+    </div>
+  </nav>
+
+  <script>
+    /* ==========================================
+       GAME DATA & INITIAL STATE
+       ========================================== */
+    const DEFAULT_STATE = {
+      saldo: 10000000,
+      reputasi: 100,
+      level: 1,
+      hari: 1,
+      jam: 8,
+      menit: 0,
+      pembeliHariIni: 0,
+      penjualanHariIni: 0,
+      
+      // Products data with base cost, base market price & current user price
+      products: [
+        { id: 'aqua', name: 'Aqua 600ml', stock: 50, cost: 2500, price: 3500, basePrice: 3500, icon: 'fa-bottle-water', color: 'text-blue-500' },
+        { id: 'indomie', name: 'Indomie Goreng', stock: 100, cost: 2300, price: 3100, basePrice: 3100, icon: 'fa-bowl-food', color: 'text-amber-600' },
+        { id: 'taro', name: 'Taro Snack 36g', stock: 40, cost: 4000, price: 5500, basePrice: 5500, icon: 'fa-cookie', color: 'text-orange-500' },
+        { id: 'chitato', name: 'Chitato Sapi Panggang', stock: 30, cost: 8000, price: 11000, basePrice: 11000, icon: 'fa-box-open', color: 'text-yellow-600' },
+        { id: 'ultramilk', name: 'Ultra Milk Cokelat 250ml', stock: 45, cost: 5000, price: 7000, basePrice: 7000, icon: 'fa-glass-water', color: 'text-sky-600' },
+        { id: 'sampoerna', name: 'Sampoerna Mild 16', stock: 20, cost: 28000, price: 33000, basePrice: 33000, icon: 'fa-smoking', color: 'text-red-500' }
+      ],
+
+      // Employees list
+      employees: [
+        { id: 1, name: 'Budi Santoso', role: 'Kasir', salary: 100000, speed: 1.2 }
+      ],
+
+      // Cities data for Leaflet Map
+      cities: [
+        { id: 'jakarta', name: 'Jakarta', coords: [-6.2088, 106.8456], cost: 0, multiplier: 1.0, unlocked: true },
+        { id: 'surabaya', name: 'Surabaya', coords: [-7.2575, 112.7521], cost: 15000000, multiplier: 1.3, unlocked: false },
+        { id: 'bandung', name: 'Bandung', coords: [-6.9175, 107.6191], cost: 20000000, multiplier: 1.5, unlocked: false },
+        { id: 'medan', name: 'Medan', coords: [3.5952, 98.6722], cost: 30000000, multiplier: 1.8, unlocked: false },
+        { id: 'makassar', name: 'Makassar', coords: [-5.1477, 119.4327], cost: 40000000, multiplier: 2.0, unlocked: false },
+        { id: 'semarang', name: 'Semarang', coords: [-6.9667, 110.4167], cost: 50000000, multiplier: 2.2, unlocked: false },
+        { id: 'palembang', name: 'Palembang', coords: [-2.9761, 104.7754], cost: 60000000, multiplier: 2.5, unlocked: false },
+        { id: 'denpasar', name: 'Denpasar (Bali)', coords: [-8.6705, 115.2126], cost: 80000000, multiplier: 3.0, unlocked: false },
+        { id: 'yogyakarta', name: 'Yogyakarta', coords: [-7.7956, 110.3695], cost: 100000000, multiplier: 3.5, unlocked: false },
+        { id: 'balikpapan', name: 'Balikpapan', coords: [-1.2379, 116.8529], cost: 150000000, multiplier: 4.5, unlocked: false }
+      ],
+
+      // Upgrades list
+      upgrades: [
+        { id: 'rak', name: 'Rak Tambahan', desc: 'Meningkatkan stok maks & variasi', cost: 2000000, bought: false, icon: 'fa-layer-group' },
+        { id: 'kasir', name: 'Kasir Cepat', desc: 'Mempercepat antrean pelanggan 30%', cost: 5000000, bought: false, icon: 'fa-bolt' },
+        { id: 'ac', name: 'AC Sentral', desc: 'Meningkatkan kepuasan & reputasi', cost: 8000000, bought: false, icon: 'fa-snowflake' },
+        { id: 'cctv', name: 'CCTV Keamanan', desc: 'Mengurangi kerugian barang hilang', cost: 12000000, bought: false, icon: 'fa-video' }
+      ],
+
+      logs: []
+    };
+
+    let gameState = JSON.parse(localStorage.getItem('indoManagerSave')) || JSON.parse(JSON.stringify(DEFAULT_STATE));
+    let timeSpeed = 1; // 0=Pause, 1=1x, 2=2x, 5=5x, 10=10x
+    let timerInterval = null;
+    let leafletMap = null;
+    let mapMarkers = {};
+
+    const RANDOM_NAMES = ['Budi', 'Siti', 'Andi', 'Rina', 'Dedi', 'Maya', 'Joko', 'Lina', 'Agus', 'Dewi', 'Eko', 'Nani'];
+    const ROLES = [
+      { role: 'Kasir', salary: 100000, speed: 1.2 },
+      { role: 'Pramuniaga', salary: 120000, speed: 1.4 },
+      { role: 'Supervisor', salary: 200000, speed: 1.8 }
+    ];
+
+    // FORMAT CURRENCY
+    function formatRp(val) {
+      return 'Rp ' + Math.floor(val).toLocaleString('id-ID');
+    }
+
+    // LOG ACTIVITY
+    function addLog(text, type = 'info') {
+      const timeStr = `${String(gameState.jam).padStart(2, '0')}:${String(gameState.menit).padStart(2, '0')}`;
+      let badgeClass = 'bg-gray-100 text-gray-600';
+      if (type === 'success') badgeClass = 'bg-emerald-100 text-grab-darkGreen font-semibold';
+      if (type === 'danger') badgeClass = 'bg-red-100 text-red-600 font-semibold';
+      if (type === 'warning') badgeClass = 'bg-amber-100 text-amber-700 font-semibold';
+
+      gameState.logs.unshift({ time: timeStr, text, type, badgeClass });
+      if (gameState.logs.length > 50) gameState.logs.pop();
+
+      renderLogs();
+    }
+
+    function renderLogs() {
+      const container = document.getElementById('activityLog');
+      if (!container) return;
+
+      if (gameState.logs.length === 0) {
+        container.innerHTML = `<div class="text-gray-400 text-center py-8">Belum ada aktivitas tercatat...</div>`;
+        return;
+      }
+
+      container.innerHTML = gameState.logs.map(log => `
+        <div class="flex items-start justify-between p-2 rounded-lg ${log.badgeClass} transition">
+          <span class="flex-1 mr-2">${log.text}</span>
+          <span class="text-[10px] opacity-75 font-mono">${log.time}</span>
+        </div>
+      `).join('');
+    }
+
+    // REAL-TIME CLOCK ENGINE
+    function startClockEngine() {
+      if (timerInterval) clearInterval(timerInterval);
+      
+      timerInterval = setInterval(() => {
+        if (timeSpeed === 0) return;
+
+        // Advance minutes based on speed
+        gameState.menit += 1;
+        if (gameState.menit >= 60) {
+          gameState.menit = 0;
+          gameState.jam += 1;
+        }
+
+        // Customer Spawning Logic on Ticks
+        handleCustomerSpawn();
+
+        // Check End of Day (22:00)
+        if (gameState.jam >= 22) {
+          endOfDayProcess();
+        }
+
+        updateUI();
+      }, 1000 / timeSpeed);
+    }
+
+    function setSpeed(speed) {
+      timeSpeed = speed;
+      document.querySelectorAll('.speed-btn').forEach(btn => {
+        btn.classList.remove('bg-grab-green', 'text-white', 'shadow-sm');
+        btn.classList.add('text-gray-600', 'hover:bg-white');
+      });
+
+      const activeBtn = document.getElementById(`btnSpeed${speed}`);
+      if (activeBtn) {
+        activeBtn.classList.add('bg-grab-green', 'text-white', 'shadow-sm');
+        activeBtn.classList.remove('text-gray-600', 'hover:bg-white');
+      }
+
+      startClockEngine();
+    }
+
+    // END OF DAY PROCESS (22:00)
+    function endOfDayProcess() {
+      // Calculate Daily Employees Salary Overhead
+      const totalGaji = gameState.employees.reduce((sum, e) => sum + e.salary, 0);
+      gameState.saldo -= totalGaji;
+
+      addLog(` Hari ke-${gameState.hari} selesai. Gaji Karyawan dibayar: ${formatRp(totalGaji)}`, 'warning');
+
+      // Reset for Next Day
+      gameState.hari += 1;
+      gameState.jam = 8;
+      gameState.menit = 0;
+      gameState.pembeliHariIni = 0;
+      gameState.penjualanHariIni = 0;
+
+      // Auto Level Up check
+      if (gameState.saldo > gameState.level * 25000000) {
+        gameState.level += 1;
+        addLog(`Selamat! Minimarket naik ke Level ${gameState.level}`, 'success');
+      }
+
+      saveGame();
+    }
+
+    // CUSTOMER SPAWN SIMULATION
+    function handleCustomerSpawn() {
+      // Chance of customer arriving (Base chance modified by active branch count, employees, and price fair-ness)
+      const branchMultiplier = gameState.cities.filter(c => c.unlocked).length;
+      const employeeMultiplier = 1 + (gameState.employees.length * 0.15);
+      
+      // Random customer spawn check
+      if (Math.random() < (0.35 * employeeMultiplier)) {
+        // Customer selects a random product
+        const availableProducts = gameState.products;
+        const targetProd = availableProducts[Math.floor(Math.random() * availableProducts.length)];
+
+        // Dynamic Pricing Conversion Chance
+        // Price higher than base price reduces purchase probability
+        const priceRatio = targetProd.price / targetProd.basePrice;
+        let buyProbability = 0.85;
+
+        if (priceRatio > 1.2) buyProbability = 0.3; // Too expensive
+        else if (priceRatio > 1.0) buyProbability = 0.6;
+        else if (priceRatio < 1.0) buyProbability = 0.98; // Cheap item
+
+        if (Math.random() < buyProbability) {
+          // Attempt Purchase
+          if (targetProd.stock > 0) {
+            const qty = Math.floor(Math.random() * 2) + 1; // 1-2 items
+            const finalQty = Math.min(qty, targetProd.stock);
+
+            targetProd.stock -= finalQty;
+            const revenue = targetProd.price * finalQty * branchMultiplier;
+
+            gameState.saldo += revenue;
+            gameState.penjualanHariIni += revenue;
+            gameState.pembeliHariIni += 1;
+
+            // Small chance to increase reputation
+            if (Math.random() < 0.1) gameState.reputasi = Math.min(100, gameState.reputasi + 0.1);
+
+            addLog(`Pembeli membeli ${finalQty}x ${targetProd.name} (+${formatRp(revenue)})`, 'success');
+          } else {
+            // Out of stock penalty
+            gameState.reputasi = Math.max(10, gameState.reputasi - 0.5);
+            addLog(`Pembeli kecewa! Stok ${targetProd.name} habis (-0.5 Reputasi)`, 'danger');
+          }
+        }
+      }
+    }
+
+    // RENDER PRODUCTS IN TOKO TAB
+    function renderProducts() {
+      const container = document.getElementById('productList');
+      if (!container) return;
+
+      container.innerHTML = gameState.products.map(p => `
+        <div class="bg-white p-4 rounded-xl shadow-sm border border-gray-100 flex flex-col justify-between space-y-3">
+          <div class="flex items-start justify-between">
+            <div class="flex items-center space-x-3">
+              <div class="w-10 h-10 rounded-lg bg-gray-100 flex items-center justify-center ${p.color} text-xl">
+                <i class="fa-solid ${p.icon}"></i>
+              </div>
+              <div>
+                <h3 class="font-bold text-gray-800 text-sm">${p.name}</h3>
+                <p class="text-xs text-gray-400">Modal: ${formatRp(p.cost)} | Acuan: ${formatRp(p.basePrice)}</p>
+              </div>
+            </div>
+            <span class="px-2 py-0.5 text-xs font-bold rounded-full ${p.stock < 10 ? 'bg-red-100 text-red-600' : 'bg-green-100 text-grab-darkGreen'}">
+              Stok: ${p.stock}
+            </span>
+          </div>
+
+          <!-- DYNAMIC PRICING ADJUSTMENT -->
+          <div class="flex items-center justify-between bg-gray-50 p-2 rounded-lg border border-gray-200">
+            <span class="text-xs font-semibold text-gray-600">Harga Jual:</span>
+            <div class="flex items-center space-x-1">
+              <button onclick="adjustPrice('${p.id}', -500)" class="w-6 h-6 rounded bg-gray-200 hover:bg-gray-300 font-bold text-xs flex items-center justify-center">-</button>
+              <span class="text-xs font-extrabold text-gray-800 px-1">${formatRp(p.price)}</span>
+              <button onclick="adjustPrice('${p.id}', 500)" class="w-6 h-6 rounded bg-gray-200 hover:bg-gray-300 font-bold text-xs flex items-center justify-center">+</button>
+            </div>
+          </div>
+
+          <!-- BUY STOCK BUTTON -->
+          <button onclick="buyStock('${p.id}')" class="w-full bg-grab-green hover:bg-grab-darkGreen text-white py-2 rounded-lg text-xs font-bold transition shadow-sm flex items-center justify-center gap-1">
+            <i class="fa-solid fa-cart-plus"></i> Beli Stok (+10 Unit = ${formatRp(p.cost * 10)})
+          </button>
+        </div>
+      `).join('');
+    }
+
+    function adjustPrice(prodId, delta) {
+      const prod = gameState.products.find(p => p.id === prodId);
+      if (prod) {
+        prod.price = Math.max(prod.cost, prod.price + delta);
+        renderProducts();
+        saveGame();
+      }
+    }
+
+    function buyStock(prodId) {
+      const prod = gameState.products.find(p => p.id === prodId);
+      const totalCost = prod.cost * 10;
+
+      if (gameState.saldo >= totalCost) {
+        gameState.saldo -= totalCost;
+        prod.stock += 10;
+        addLog(`Beli stok 10x ${prod.name} (${formatRp(totalCost)})`, 'info');
+        updateUI();
+        renderProducts();
+        saveGame();
+      } else {
+        alert('Saldo kas tidak mencukupi!');
+      }
+    }
+
+    // RENDER EMPLOYEES TAB
+    function renderEmployees() {
+      const container = document.getElementById('employeeList');
+      if (!container) return;
+
+      container.innerHTML = gameState.employees.map(e => `
+        <div class="bg-white p-4 rounded-xl shadow-sm border border-gray-100 flex items-center justify-between">
+          <div class="flex items-center space-x-3">
+            <div class="w-10 h-10 rounded-full bg-blue-100 text-blue-600 flex items-center justify-center font-bold text-base">
+              <i class="fa-solid fa-user-tie"></i>
+            </div>
+            <div>
+              <h3 class="font-bold text-gray-800 text-sm">${e.name}</h3>
+              <p class="text-xs text-gray-500">${e.role} | Gaji: <span class="font-semibold text-gray-700">${formatRp(e.salary)}/hari</span></p>
+            </div>
+          </div>
+
+          <button onclick="fireEmployee(${e.id})" class="bg-red-50 hover:bg-red-100 text-red-600 px-3 py-1.5 rounded-lg text-xs font-bold border border-red-200 transition flex items-center gap-1">
+            <i class="fa-solid fa-user-minus"></i> Pecat
+          </button>
+        </div>
+      `).join('');
+    }
+
+    function hireEmployee() {
+      const randomRole = ROLES[Math.floor(Math.random() * ROLES.length)];
+      const randomName = RANDOM_NAMES[Math.floor(Math.random() * RANDOM_NAMES.length)] + ' ' + String.fromCharCode(65 + Math.floor(Math.random() * 26)) + '.';
+
+      const newEmp = {
+        id: Date.now(),
+        name: randomName,
+        role: randomRole.role,
+        salary: randomRole.salary,
+        speed: randomRole.speed
+      };
+
+      gameState.employees.push(newEmp);
+      addLog(`Merekrut karyawan baru: ${newEmp.name} (${newEmp.role})`, 'success');
+      updateUI();
+      renderEmployees();
+      saveGame();
+    }
+
+    function fireEmployee(empId) {
+      const emp = gameState.employees.find(e => e.id === empId);
+      if (emp) {
+        gameState.employees = gameState.employees.filter(e => e.id !== empId);
+        addLog(`Memecat karyawan ${emp.name}`, 'warning');
+        updateUI();
+        renderEmployees();
+        saveGame();
+      }
+    }
+
+    // RENDER UPGRADES TAB
+    function renderUpgrades() {
+      const container = document.getElementById('upgradeList');
+      if (!container) return;
+
+      container.innerHTML = gameState.upgrades.map(u => `
+        <div class="bg-white p-4 rounded-xl shadow-sm border border-gray-100 flex flex-col justify-between space-y-3">
+          <div class="flex items-start space-x-3">
+            <div class="w-10 h-10 rounded-lg bg-purple-100 text-purple-600 flex items-center justify-center text-lg">
+              <i class="fa-solid ${u.icon}"></i>
+            </div>
+            <div class="flex-1">
+              <h3 class="font-bold text-gray-800 text-sm">${u.name}</h3>
+              <p class="text-xs text-gray-500">${u.desc}</p>
+            </div>
+          </div>
+
+          <button onclick="buyUpgrade('${u.id}')" ${u.bought ? 'disabled' : ''} class="w-full py-2 rounded-lg text-xs font-bold transition shadow-sm ${
+            u.bought ? 'bg-gray-100 text-gray-400 cursor-not-allowed' : 'bg-grab-green hover:bg-grab-darkGreen text-white'
+          }">
+            ${u.bought ? 'Sudah Dibeli' : `Beli Upgrade (${formatRp(u.cost)})`}
+          </button>
+        </div>
+      `).join('');
+    }
+
+    function buyUpgrade(upgradeId) {
+      const up = gameState.upgrades.find(u => u.id === upgradeId);
+      if (up && !up.bought) {
+        if (gameState.saldo >= up.cost) {
+          gameState.saldo -= up.cost;
+          up.bought = true;
+          addLog(`Membeli Upgrade Toko: ${up.name}`, 'success');
+          updateUI();
+          renderUpgrades();
+          saveGame();
+        } else {
+          alert('Saldo kas tidak mencukupi untuk upgrade ini!');
+        }
+      }
+    }
+
+    // INITIALIZE & RENDER LEAFLET MAP
+    function initMap() {
+      if (leafletMap) return;
+
+      leafletMap = L.map('map').setView([-2.5, 118.0], 5);
+
+      L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+        attribution: '&copy; OpenStreetMap contributors'
+      }).addTo(leafletMap);
+
+      renderMapMarkers();
+    }
+
+    function renderMapMarkers() {
+      if (!leafletMap) return;
+
+      gameState.cities.forEach(city => {
+        const markerColor = city.unlocked ? '#00B14F' : '#E63946';
+
+        const customIcon = L.divIcon({
+          className: 'custom-div-icon',
+          html: `<div style="background-color: ${markerColor}; width: 18px; height: 18px; border-radius: 50%; border: 3px solid white; shadow: 0 2px 4px rgba(0,0,0,0.3);"></div>`,
+          iconSize: [18, 18],
+          iconAnchor: [9, 9]
+        });
+
+        if (mapMarkers[city.id]) {
+          leafletMap.removeLayer(mapMarkers[city.id]);
+        }
+
+        const marker = L.marker(city.coords, { icon: customIcon }).addTo(leafletMap);
+        
+        marker.bindPopup(`
+          <div class="p-1 text-center">
+            <h4 class="font-bold text-sm text-gray-800">${city.name}</h4>
+            <p class="text-xs text-gray-500">Multiplier Omzet: ${city.multiplier}x</p>
+            <p class="text-xs font-semibold my-1">${city.unlocked ? '<span class="text-green-600">Cabang Aktif</span>' : formatRp(city.cost)}</p>
+            ${!city.unlocked ? `<button onclick="unlockBranch('${city.id}')" class="bg-grab-green text-white px-2 py-1 rounded text-xs font-bold mt-1">Buka Cabang</button>` : ''}
+          </div>
+        `);
+
+        mapMarkers[city.id] = marker;
+      });
+
+      renderCitiesList();
+    }
+
+    function renderCitiesList() {
+      const container = document.getElementById('cityList');
+      if (!container) return;
+
+      container.innerHTML = gameState.cities.map(c => `
+        <div class="bg-white p-3.5 rounded-xl shadow-sm border border-gray-100 flex items-center justify-between">
+          <div>
+            <h3 class="font-bold text-gray-800 text-sm flex items-center gap-1.5">
+              <i class="fa-solid fa-building-circle-check ${c.unlocked ? 'text-grab-green' : 'text-gray-300'}"></i>
+              ${c.name}
+            </h3>
+            <p class="text-xs text-gray-400">Bonus Omzet: ${c.multiplier}x</p>
+          </div>
+
+          ${c.unlocked ? 
+            `<span class="bg-green-100 text-grab-darkGreen px-2.5 py-1 rounded-full text-xs font-bold">Aktif</span>` : 
+            `<button onclick="unlockBranch('${c.id}')" class="bg-grab-green hover:bg-grab-darkGreen text-white px-3 py-1.5 rounded-lg text-xs font-bold transition shadow-sm">
+              Buka (${formatRp(c.cost)})
+            </button>`
+          }
+        </div>
+      `).join('');
+    }
+
+    function unlockBranch(cityId) {
+      const city = gameState.cities.find(c => c.id === cityId);
+      if (city && !city.unlocked) {
+        if (gameState.saldo >= city.cost) {
+          gameState.saldo -= city.cost;
+          city.unlocked = true;
+          addLog(`Membuka cabang baru di ${city.name}!`, 'success');
+          updateUI();
+          renderMapMarkers();
+          saveGame();
+        } else {
+          alert('Saldo kas tidak cukup untuk membuka cabang di kota ini!');
+        }
+      }
+    }
+
+    // UPDATE GLOBAL UI TEXTS
+    function updateUI() {
+      document.getElementById('saldoText').innerText = formatRp(gameState.saldo);
+      document.getElementById('levelText').innerText = gameState.level;
+      document.getElementById('reputasiText').innerText = Math.round(gameState.reputasi) + '%';
+      document.getElementById('headerDayText').innerText = `Hari ke-${gameState.hari}`;
+
+      // Clock Display
+      const timeStr = `${String(gameState.jam).padStart(2, '0')}:${String(gameState.menit).padStart(2, '0')}`;
+      document.getElementById('clockDisplay').innerText = timeStr;
+
+      // Progress bar calculation (08:00 to 22:00 = 14 hours = 840 mins)
+      const currentMins = ((gameState.jam - 8) * 60) + gameState.menit;
+      const pct = Math.min(100, Math.max(0, (currentMins / 840) * 100));
+      document.getElementById('dayProgressBar').style.width = pct + '%';
+
+      // Stats counters
+      document.getElementById('statPembeli').innerText = `${gameState.pembeliHariIni} Orang`;
+      document.getElementById('statPenjualan').innerText = formatRp(gameState.penjualanHariIni);
+
+      // Branch & Salary counts
+      const activeBranches = gameState.cities.filter(c => c.unlocked).length;
+      document.getElementById('cabangCountText').innerText = `${activeBranches} Toko`;
+
+      const totalGaji = gameState.employees.reduce((sum, e) => sum + e.salary, 0);
+      document.getElementById('totalGajiText').innerText = formatRp(totalGaji);
+    }
+
+    // TAB NAVIGATION
+    function switchTab(tabId) {
+      document.querySelectorAll('.tab-content').forEach(tab => tab.classList.add('hidden'));
+      document.querySelectorAll('.nav-item').forEach(nav => {
+        nav.classList.remove('text-grab-green', 'active');
+        nav.classList.add('text-gray-400');
+      });
+
+      const activeTab = document.getElementById(`tab-${tabId}`);
+      const activeNav = document.getElementById(`nav-${tabId}`);
+
+      if (activeTab) activeTab.classList.remove('hidden');
+      if (activeNav) {
+        activeNav.classList.add('text-grab-green', 'active');
+        activeNav.classList.remove('text-gray-400');
+      }
+
+      if (tabId === 'peta') {
+        setTimeout(() => {
+          initMap();
+          if (leafletMap) leafletMap.invalidateSize();
+        }, 100);
+      }
+    }
+
+    // SAVE & LOAD STATE
+    function saveGame() {
+      localStorage.setItem('indoManagerSave', JSON.stringify(gameState));
+    }
+
+    function resetGame() {
+      if (confirm('Apakah Anda yakin ingin mereset seluruh progres minimarket?')) {
+        localStorage.removeItem('indoManagerSave');
+        gameState = JSON.parse(JSON.stringify(DEFAULT_STATE));
+        updateUI();
+        renderProducts();
+        renderEmployees();
+        renderUpgrades();
+        renderLogs();
+        if (leafletMap) renderMapMarkers();
+        addLog('Game berhasil di-reset!', 'warning');
+      }
+    }
+
+    // AUTO SAVE EVERY 10 SECONDS
+    setInterval(saveGame, 10000);
+
+    window.onload = function() {
+      updateUI();
+      renderProducts();
+      renderEmployees();
+      renderUpgrades();
+      renderLogs();
+      startClockEngine();
+    };
+  </script>
+</body>
+</html>
