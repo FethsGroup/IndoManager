@@ -4,580 +4,954 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>IndoManager — Simulasi Minimarket Indonesia</title>
-  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
   <style>
-    * { box-sizing: border-box; margin: 0; padding: 0; font-family: 'Inter', sans-serif; }
-    body { background-color: #F5F5F5; color: #1A1A1A; display: flex; justify-content: center; min-height: 100vh; padding-bottom: 70px; }
-    #app { width: 100%; max-width: 800px; background: #FFFFFF; min-height: 100vh; position: relative; box-shadow: 0 0 20px rgba(0,0,0,0.05); }
-    header { background: #FFFFFF; padding: 16px; border-bottom: 1px solid #E5E5E5; display: flex; justify-content: space-between; align-items: center; position: sticky; top: 0; z-index: 100; }
+    :root {
+      --primary: #00B14F;
+      --primary-dark: #00880A;
+      --primary-light: #E8F7EE;
+      --danger: #E63946;
+      --danger-light: #FDE8E9;
+      --warning: #F59E0B;
+      --warning-light: #FEF3C7;
+      --bg: #F4F6F8;
+      --card-bg: #FFFFFF;
+      --text: #1F2937;
+      --text-muted: #6B7280;
+      --border: #E5E7EB;
+    }
+
+    * { box-sizing: border-box; margin: 0; padding: 0; font-family: 'Inter', sans-serif; -webkit-tap-highlight-color: transparent; }
+    body { background-color: var(--bg); color: var(--text); display: flex; justify-content: center; min-height: 100vh; padding-bottom: 75px; user-select: none; }
+    #app { width: 100%; max-width: 720px; background: var(--card-bg); min-height: 100vh; position: relative; box-shadow: 0 0 25px rgba(0,0,0,0.06); display: flex; flex-direction: column; }
+    
+    header { background: #FFFFFF; padding: 14px 18px; border-bottom: 1px solid var(--border); display: flex; justify-content: space-between; align-items: center; position: sticky; top: 0; z-index: 100; box-shadow: 0 2px 4px rgba(0,0,0,0.02); }
     .profile-info { display: flex; align-items: center; gap: 12px; }
-    .avatar { width: 40px; height: 40px; background: #00B14F; border-radius: 50%; display: flex; align-items: center; justify-content: center; color: white; font-weight: bold; }
-    .nav-bottom { position: fixed; bottom: 0; left: 50%; transform: translateX(-50%); width: 100%; max-width: 800px; background: #FFFFFF; border-top: 1px solid #E5E5E5; display: flex; justify-content: space-around; padding: 10px 0; z-index: 100; }
-    .nav-item { display: flex; flex-direction: column; align-items: center; font-size: 11px; color: #8A8A8A; text-decoration: none; cursor: pointer; border: none; background: none; }
-    .nav-item.active { color: #00B14F; font-weight: 600; }
-    .nav-item svg { width: 22px; height: 22px; margin-bottom: 4px; fill: currentColor; }
-    .tab-content { display: none; padding: 16px; }
+    .avatar { width: 42px; height: 42px; background: linear-gradient(135deg, var(--primary), var(--primary-dark)); border-radius: 50%; display: flex; align-items: center; justify-content: center; color: white; font-weight: 700; font-size: 16px; box-shadow: 0 2px 6px rgba(0,177,79,0.3); }
+    
+    .nav-bottom { position: fixed; bottom: 0; left: 50%; transform: translateX(-50%); width: 100%; max-width: 720px; background: #FFFFFF; border-top: 1px solid var(--border); display: flex; justify-content: space-around; padding: 6px 0; z-index: 100; }
+    .nav-item { display: flex; flex-direction: column; align-items: center; font-size: 10px; color: var(--text-muted); text-decoration: none; cursor: pointer; border: none; background: none; flex: 1; transition: all 0.2s; }
+    .nav-item.active { color: var(--primary); font-weight: 700; }
+    .nav-item svg { width: 20px; height: 20px; margin-bottom: 2px; fill: currentColor; }
+    
+    .tab-content { display: none; padding: 16px; flex: 1; animation: fadeIn 0.2s ease-in-out; }
     .tab-content.active { display: block; }
-    .balance-card { background: linear-gradient(135deg, #00B14F, #00880A); color: white; border-radius: 16px; padding: 20px; position: relative; overflow: hidden; margin-bottom: 16px; box-shadow: 0 4px 12px rgba(0, 177, 79, 0.2); }
-    .balance-card::after { content: ''; position: absolute; right: -20px; bottom: -20px; width: 100px; height: 100px; background: rgba(255,255,255,0.1); border-radius: 50%; }
-    .balance-title { font-size: 12px; opacity: 0.9; }
-    .balance-amount { font-size: 26px; font-weight: 700; margin: 4px 0 12px 0; }
-    .stats-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; font-size: 12px; background: rgba(0,0,0,0.15); padding: 8px; border-radius: 8px; }
+    @keyframes fadeIn { from { opacity: 0; transform: translateY(4px); } to { opacity: 1; transform: translateY(0); } }
+
+    .balance-card { background: linear-gradient(135deg, #00B14F, #007A09); color: white; border-radius: 16px; padding: 18px 20px; position: relative; overflow: hidden; margin-bottom: 16px; box-shadow: 0 6px 16px rgba(0, 177, 79, 0.25); }
+    .balance-card::after { content: ''; position: absolute; right: -20px; bottom: -20px; width: 120px; height: 120px; background: rgba(255,255,255,0.08); border-radius: 50%; pointer-events: none; }
+    .balance-title { font-size: 11px; font-weight: 600; letter-spacing: 0.5px; opacity: 0.9; text-transform: uppercase; }
+    .balance-amount { font-size: 28px; font-weight: 800; margin: 4px 0 14px 0; letter-spacing: -0.5px; }
+    .stats-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; font-size: 12px; background: rgba(0,0,0,0.18); padding: 10px; border-radius: 10px; backdrop-filter: blur(4px); }
+    
     .quick-actions { display: grid; grid-template-columns: repeat(4, 1fr); gap: 10px; margin-bottom: 16px; }
-    .action-btn { background: #E8F7EE; color: #00880A; border: none; border-radius: 12px; padding: 12px 8px; font-size: 12px; font-weight: 600; cursor: pointer; display: flex; flex-direction: column; align-items: center; gap: 6px; }
-    .action-btn svg { width: 24px; height: 24px; fill: #00880A; }
-    .card { background: #FFFFFF; border: 1px solid #E5E5E5; border-radius: 12px; padding: 16px; margin-bottom: 12px; box-shadow: 0 2px 8px rgba(0,0,0,0.04); }
-    .time-control { display: flex; gap: 8px; margin-bottom: 16px; }
-    .speed-btn { flex: 1; padding: 8px; border: 1px solid #E5E5E5; background: #FFF; border-radius: 8px; font-weight: 600; cursor: pointer; display: flex; justify-content: center; align-items: center; }
-    .speed-btn.active { background: #00B14F; color: white; border-color: #00B14F; }
-    .item-row { display: flex; justify-content: space-between; align-items: center; padding: 10px 0; border-bottom: 1px solid #F5F5F5; }
-    .btn { background: #00B14F; color: white; border: none; padding: 8px 14px; border-radius: 8px; font-weight: 600; cursor: pointer; font-size: 13px; }
-    .btn-sm { padding: 6px 12px; font-size: 12px; border-radius: 6px; }
-    .btn-danger { background: #E63946; }
-    .btn:disabled { opacity: 0.5; cursor: not-allowed; }
-    .log-list { max-height: 200px; overflow-y: auto; font-size: 12px; }
-    .log-item { padding: 6px 0; border-bottom: 1px solid #F5F5F5; color: #8A8A8A; }
-    .log-item.good { color: #00880A; }
-    .log-item.bad { color: #E63946; }
-    .price-control { display: flex; align-items: center; gap: 4px; }
-    .price-control input { width: 90px; padding: 6px; border: 1px solid #E5E5E5; border-radius: 6px; text-align: center; font-weight: 600; }
-    .price-btn { width: 28px; height: 28px; background: #E8F7EE; color: #00880A; border: 1px solid #00B14F; border-radius: 6px; font-weight: bold; cursor: pointer; display: flex; align-items: center; justify-content: center; user-select: none; }
-    .locked-card { background: #FFF3CD; color: #856404; border: 1px solid #FFEEBA; text-align: center; padding: 20px; border-radius: 12px; margin-top: 10px; font-size: 13px; }
-    .tag { background: #E8F7EE; color: #00880A; font-size: 11px; padding: 2px 6px; border-radius: 4px; font-weight: bold; }
+    .action-btn { background: var(--primary-light); color: var(--primary-dark); border: none; border-radius: 12px; padding: 12px 6px; font-size: 11px; font-weight: 700; cursor: pointer; display: flex; flex-direction: column; align-items: center; gap: 6px; transition: transform 0.1s, background-color 0.2s; }
+    .action-btn:active { transform: scale(0.96); background-color: #d1f2dd; }
+    .action-btn svg { width: 22px; height: 22px; fill: var(--primary-dark); }
+    
+    .card { background: var(--card-bg); border: 1px solid var(--border); border-radius: 14px; padding: 16px; margin-bottom: 12px; box-shadow: 0 2px 6px rgba(0,0,0,0.02); }
+    .card-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px; }
+    .card-title { font-size: 15px; font-weight: 700; color: var(--text); }
+
+    .time-control { display: flex; gap: 6px; margin-bottom: 16px; background: #EEF2F6; padding: 4px; border-radius: 10px; }
+    .speed-btn { flex: 1; padding: 8px; border: none; background: transparent; border-radius: 8px; font-weight: 700; font-size: 12px; cursor: pointer; display: flex; justify-content: center; align-items: center; color: var(--text-muted); transition: all 0.2s; }
+    .speed-btn.active { background: #FFFFFF; color: var(--primary-dark); box-shadow: 0 2px 4px rgba(0,0,0,0.08); }
+    
+    .item-row { display: flex; justify-content: space-between; align-items: center; padding: 12px 0; border-bottom: 1px solid #F3F4F6; }
+    .item-row:last-child { border-bottom: none; }
+    
+    .btn { background: var(--primary); color: white; border: none; padding: 9px 16px; border-radius: 9px; font-weight: 700; cursor: pointer; font-size: 13px; transition: all 0.2s; display: inline-flex; align-items: center; justify-content: center; gap: 6px; }
+    .btn:active { transform: scale(0.97); }
+    .btn-sm { padding: 6px 12px; font-size: 12px; border-radius: 7px; }
+    .btn-danger { background: var(--danger); }
+    .btn-secondary { background: #EEF2F6; color: var(--text); }
+    .btn:disabled { opacity: 0.55; cursor: not-allowed; transform: none !important; }
+    
+    .log-list { max-height: 240px; overflow-y: auto; font-size: 12px; display: flex; flex-direction: column; gap: 8px; }
+    .log-item { padding: 10px 12px; border-radius: 10px; background: #F9FAFB; border-left: 4px solid var(--border); color: var(--text); font-weight: 500; font-size: 12px; line-height: 1.4; }
+    .log-item.good { border-left-color: var(--primary); background: var(--primary-light); color: var(--primary-dark); }
+    .log-item.bad { border-left-color: var(--danger); background: var(--danger-light); color: var(--danger); }
+    
+    /* Dynamic Review Elements */
+    .review-card { background: #FFFFFF; border: 1px solid var(--border); border-radius: 12px; padding: 12px; margin-bottom: 10px; box-shadow: 0 1px 3px rgba(0,0,0,0.03); }
+    .review-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 6px; }
+    .review-author { font-weight: 700; font-size: 13px; color: var(--text); display: flex; align-items: center; gap: 6px; }
+    .review-stars { color: var(--warning); font-size: 12px; }
+    .review-text { font-size: 12px; color: #374151; margin-bottom: 8px; line-height: 1.4; }
+    .review-reply { background: #F3F4F6; padding: 8px 10px; border-radius: 8px; font-size: 11px; margin-top: 6px; border-left: 3px solid var(--primary); }
+
+    .price-control { display: flex; align-items: center; gap: 4px; background: #F3F4F6; padding: 3px; border-radius: 8px; }
+    .price-control input { width: 80px; padding: 5px 2px; border: 1px solid var(--border); border-radius: 6px; text-align: center; font-weight: 700; font-size: 13px; outline: none; background: #FFF; }
+    .price-control input:focus { border-color: var(--primary); }
+    .price-btn { width: 28px; height: 28px; background: #FFFFFF; color: var(--primary-dark); border: 1px solid var(--border); border-radius: 6px; font-weight: 800; cursor: pointer; display: flex; align-items: center; justify-content: center; font-size: 14px; user-select: none; transition: background 0.1s; }
+    .price-btn:active { background: var(--primary-light); }
+    
+    .filter-tabs { display: flex; gap: 6px; margin-bottom: 12px; }
+    .filter-btn { flex: 1; padding: 6px 10px; border: 1px solid var(--border); background: #FFF; border-radius: 8px; font-size: 11px; font-weight: 600; cursor: pointer; text-align: center; color: var(--text-muted); }
+    .filter-btn.active { background: var(--primary-light); color: var(--primary-dark); border-color: var(--primary); font-weight: 700; }
+
+    .locked-card { background: var(--warning-light); color: #B45309; border: 1px solid #FCD34D; text-align: center; padding: 18px; border-radius: 12px; margin-top: 10px; font-size: 13px; line-height: 1.5; }
+    .tag { background: var(--primary-light); color: var(--primary-dark); font-size: 10px; padding: 3px 7px; border-radius: 6px; font-weight: 700; text-transform: uppercase; }
+    .tag-disabled { background: #E5E7EB; color: #6B7280; }
+
+    .toast { position: fixed; top: 70px; left: 50%; transform: translateX(-50%); background: #1F2937; color: white; padding: 10px 18px; border-radius: 30px; font-size: 12px; font-weight: 600; opacity: 0; pointer-events: none; transition: all 0.3s ease; z-index: 1000; box-shadow: 0 4px 12px rgba(0,0,0,0.15); }
+    .toast.show { opacity: 1; transform: translateX(-50%) translateY(5px); }
   </style>
 </head>
 <body>
+
+  <!-- Toast Notification Container -->
+  <div id="toast" class="toast">Pesan Info</div>
+
   <div id="app">
     <header>
       <div class="profile-info">
         <div class="avatar">M</div>
         <div>
-          <div style="font-weight: 600; font-size: 14px;">Manager Minimarket</div>
-          <div style="font-size: 12px; color: #8A8A8A;" id="time-display">08:00 WIB | Hari 1</div>
+          <div style="font-weight: 700; font-size: 14px; color: var(--text);">Manager Minimarket</div>
+          <div style="font-size: 11px; color: var(--text-muted); font-weight: 600;" id="time-display">08:00 WIB | Hari 1</div>
         </div>
       </div>
-      <button class="btn" onclick="nextDay()" style="padding: 6px 12px;">›› Skip Hari</button>
+      <button class="btn btn-sm btn-secondary" onclick="game.nextDay()" style="gap:4px;">
+        Skip Hari <span>››</span>
+      </button>
     </header>
 
-    <!-- DASHBOARD -->
     <div id="tab-home" class="tab-content active">
       <div class="balance-card">
-        <div class="balance-title">SALDO UTAMA</div>
+        <div class="balance-title">Saldo Utama Toko</div>
         <div class="balance-amount" id="balance">Rp 5.000.000</div>
         <div class="stats-grid">
           <div>Level: <b id="level">1</b></div>
-          <div>Reputasi: <b id="reputation">50</b></div>
+          <div>Reputasi: <b id="reputation">50%</b></div>
           <div>Cabang: <b id="branch-count">1</b></div>
         </div>
       </div>
 
+      <!-- Time Speed Controls -->
       <div class="time-control">
-        <button class="speed-btn active" onclick="setSpeed(1, this)">1x</button>
-        <button class="speed-btn" onclick="setSpeed(2, this)">2x</button>
-        <button class="speed-btn" onclick="setSpeed(5, this)">5x</button>
-        <button class="speed-btn" onclick="setSpeed(0, this)">
-          <svg viewBox="0 0 24 24" style="width: 16px; height: 16px; fill: currentColor;"><path d="M6 19h4V5H6v14zm8-14v14h4V5h-4z"/></svg>
-        </button>
+        <button class="speed-btn active" onclick="game.setSpeed(1, this)">1x</button>
+        <button class="speed-btn" onclick="game.setSpeed(2, this)">2x</button>
+        <button class="speed-btn" onclick="game.setSpeed(5, this)">5x</button>
+        <button class="speed-btn" onclick="game.setSpeed(0, this)">Pause ❚❚</button>
       </div>
 
+      <!-- Quick Actions Grid -->
       <div class="quick-actions">
-        <button class="action-btn" onclick="switchTab('toko')">
-          <svg viewBox="0 0 24 24"><path d="M20 4H4v2h16V4zm1 10v-2l-1-5H4l-1 5v2h1v6h10v-6h4v6h2v-6h1zm-9 4H6v-4h6v4z"/></svg>Toko
+        <button class="action-btn" onclick="game.switchTab('toko')">
+          <svg viewBox="0 0 24 24"><path d="M20 4H4v2h16V4zm1 10v-2l-1-5H4l-1 5v2h1v6h10v-6h4v6h2v-6h1zm-9 4H6v-4h6v4z"/></svg>Stok & Harga
         </button>
-        <button class="action-btn" onclick="switchTab('karyawan')">
+        <button class="action-btn" onclick="game.switchTab('cabang')">
+          <svg viewBox="0 0 24 24"><path d="M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7zm0 9.5c-1.38 0-2.5-1.12-2.5-2.5s1.12-2.5 2.5-2.5 2.5 1.12 2.5 2.5-1.12 2.5-2.5 2.5z"/></svg>Buka Cabang
+        </button>
+        <button class="action-btn" onclick="game.switchTab('karyawan')">
           <svg viewBox="0 0 24 24"><path d="M16 11c1.66 0 2.99-1.34 2.99-3S17.66 5 16 5c-1.66 0-3 1.34-3 3zm-8 0c1.66 0 2.99-1.34 2.99-3S9.66 5 8 5C6.34 5 5 6.34 5 8s1.34 3 3 3zm0 2c-2.33 0-7 1.17-7 3.5V19h14v-2.5c0-2.33-4.67-3.5-7-3.5z"/></svg>Karyawan
         </button>
-        <button class="action-btn" onclick="switchTab('cabang')">
-          <svg viewBox="0 0 24 24"><path d="M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7zm0 9.5c-1.38 0-2.5-1.12-2.5-2.5s1.12-2.5 2.5-2.5 2.5 1.12 2.5 2.5-1.12 2.5-2.5 2.5z"/></svg>Cabang
-        </button>
-        <button class="action-btn" onclick="switchTab('review')">
-          <svg viewBox="0 0 24 24"><path d="M20 2H4c-1.1 0-1.99.9-1.99 2L2 22l4-4h14c1.1 0 2-.9 2-2V4c0-1.1-.9-2-2-2z"/></svg>Netizen
+        <button class="action-btn" onclick="game.switchTab('review')">
+          <svg viewBox="0 0 24 24"><path d="M12 17.27L18.18 21l-1.64-7.03L22 9.24l-7.19-.61L12 2 9.19 8.63 2 9.24l5.46 4.73L5.82 21z"/></svg>Ulasan
         </button>
       </div>
 
+      <!-- Live Transcation Statistics -->
       <div class="card">
-        <h4 style="margin-bottom: 8px;">Penjualan Hari Ini</h4>
-        <div style="display: flex; justify-content: space-between; font-size: 14px;">
-          <span>Pembeli: <b id="today-buyers">0</b> orang</span>
-          <span>Omset: <b id="today-sales">Rp 0</b></span>
+        <div class="card-header">
+          <span class="card-title">Penjualan Hari Ini</span>
+          <span class="tag" id="status-tag">BUKA</span>
+        </div>
+        <div style="display: flex; justify-content: space-between; font-size: 13px; font-weight: 600;">
+          <span>Pembeli: <b id="today-buyers" style="color:var(--primary-dark)">0</b> orang</span>
+          <span>Omset: <b id="today-sales" style="color:var(--primary-dark)">Rp 0</b></span>
         </div>
       </div>
 
+      <!-- Realtime Activity Log -->
       <div class="card">
-        <h4 style="margin-bottom: 8px;">Log Aktivitas Toko</h4>
-        <div class="log-list" id="activity-log"></div>
+        <div class="card-header">
+          <span class="card-title">Log Transaksi Realtime</span>
+        </div>
+        <div class="log-list" id="activity-log">
+          <div class="log-item">Toko siap melayani pelanggan hari ini.</div>
+        </div>
       </div>
     </div>
 
-    <!-- TOKO & STOK -->
     <div id="tab-toko" class="tab-content">
-      <h3>Stok & Dynamic Pricing</h3>
-      <p style="font-size: 12px; color: #8A8A8A; margin-bottom: 12px;">Atur harga jual dan beli stok produk untuk toko Anda.</p>
+      <div style="margin-bottom: 14px;">
+        <h3 style="font-size: 18px; font-weight: 800;">Atur Harga & Tambah Stok</h3>
+        <p style="font-size: 12px; color: var(--text-muted); margin-top: 2px;">
+          Dynamic Pricing: Naikkkan margin atau diskon barang. Pembeli sensitif terhadap harga!
+        </p>
+      </div>
       <div id="product-list"></div>
     </div>
 
-    <!-- KARYAWAN -->
-    <div id="tab-karyawan" class="tab-content">
-      <h3>Manajemen Karyawan</h3>
-      <button class="btn" style="margin: 10px 0; width: 100%;" onclick="hireEmployee()">+ Rekrut Karyawan Baru (Rp 500.000)</button>
-      <div id="employee-list"></div>
-    </div>
-
-    <!-- BUKA CABANG INDONESIA -->
     <div id="tab-cabang" class="tab-content">
-      <h3>Buka Cabang Daerah Indonesia</h3>
-      <p style="font-size: 12px; color: #8A8A8A; margin-bottom: 12px;">Ekspansi toko ke berbagai kota untuk pendapatan pasif harian.</p>
+      <div style="margin-bottom: 14px;">
+        <h3 style="font-size: 18px; font-weight: 800;">Buka Cabang Kota Indonesia</h3>
+        <p style="font-size: 12px; color: var(--text-muted); margin-top: 2px;">
+          Perluas jaringan toko di seluruh kota Indonesia untuk memperoleh *Passive Income* harian.
+        </p>
+      </div>
       <div id="city-list"></div>
     </div>
 
-    <!-- NETIZEN REVIEWS -->
-    <div id="tab-review" class="tab-content">
-      <h3>Ulasan Netizen</h3>
-      <div class="log-list" id="review-list" style="max-height: 400px;"></div>
+    <div id="tab-karyawan" class="tab-content">
+      <div style="margin-bottom: 14px;">
+        <h3 style="font-size: 18px; font-weight: 800;">Manajemen Karyawan</h3>
+        <p style="font-size: 12px; color: var(--text-muted); margin-top: 2px;">
+          Rekrut tim terbaik untuk meningkatkan kecepatan toko dan kepuasan pelanggan.
+        </p>
+      </div>
+      <button class="btn" style="width: 100%; margin-bottom: 14px;" onclick="game.hireEmployee()">
+        + Rekrut Karyawan Baru (Rp 500.000)
+      </button>
+      <div id="employee-list"></div>
     </div>
 
-    <!-- UPGRADE & FRANCHISE -->
     <div id="tab-upgrade" class="tab-content">
-      <h3>Upgrade & Upgrade Toko</h3>
+      <div style="margin-bottom: 14px;">
+        <h3 style="font-size: 18px; font-weight: 800;">Upgrade Fasilitas Toko</h3>
+        <p style="font-size: 12px; color: var(--text-muted); margin-top: 2px;">
+          Tingkatkan kenyamanan toko untuk menambah kepuasan netizen dan pelanggan.
+        </p>
+      </div>
       <div id="upgrade-list"></div>
-      <hr style="margin: 16px 0; border: none; border-top: 1px solid #E5E5E5;">
-      <h3>Kemitraan Franchise</h3>
-      <p style="font-size: 12px; color: #8A8A8A; margin-bottom: 8px;">Buka jaringan waralaba otomatis.</p>
+
+      <div style="margin: 20px 0 14px 0;">
+        <h3 style="font-size: 18px; font-weight: 800;">Kemitraan Franchise</h3>
+        <p style="font-size: 12px; color: var(--text-muted); margin-top: 2px;">
+          Jual lisensi waralaba merek Anda kepada investor lokal.
+        </p>
+      </div>
       <div id="franchise-section"></div>
     </div>
 
-    <!-- NAV BOTTOM -->
+    <div id="tab-review" class="tab-content">
+      <div style="margin-bottom: 14px;">
+        <h3 style="font-size: 18px; font-weight: 800;">Feed Ulasan Netizen & Pembeli</h3>
+        <p style="font-size: 12px; color: var(--text-muted); margin-top: 2px;">
+          Ulasan jujur pembeli secara realtime. Tanggapi ulasan negatif untuk memulihkan reputasi toko!
+        </p>
+      </div>
+
+      <!-- Review Summary Stats -->
+      <div class="card" style="display: flex; align-items: center; justify-content: space-between; padding: 12px 16px;">
+        <div>
+          <div style="font-size: 11px; color: var(--text-muted); font-weight: 600;">RATING RATA-RATA</div>
+          <div style="font-size: 24px; font-weight: 800; color: var(--text);" id="review-avg-rating">⭐ 4.5 / 5.0</div>
+        </div>
+        <div style="text-align: right;">
+          <div style="font-size: 11px; color: var(--text-muted); font-weight: 600;">TOTAL ULASAN</div>
+          <div style="font-size: 18px; font-weight: 800; color: var(--primary-dark);" id="review-total-count">0 Ulasan</div>
+        </div>
+      </div>
+
+      <!-- Filter Buttons -->
+      <div class="filter-tabs">
+        <button class="filter-btn active" onclick="game.filterReviews('all', this)">Semua</button>
+        <button class="filter-btn" onclick="game.filterReviews('positive', this)">Positif (⭐4-5)</button>
+        <button class="filter-btn" onclick="game.filterReviews('negative', this)">Negatif (⭐1-3)</button>
+      </div>
+
+      <div id="review-list" style="max-height: 440px; overflow-y: auto;"></div>
+    </div>
+
     <nav class="nav-bottom">
-      <button class="nav-item active" onclick="switchTab('home')">
+      <button class="nav-item active" onclick="game.switchTab('home')">
         <svg viewBox="0 0 24 24"><path d="M10 20v-6h4v6h5v-8h3L12 3 2 12h3v8z"/></svg>Home
       </button>
-      <button class="nav-item" onclick="switchTab('toko')">
+      <button class="nav-item" onclick="game.switchTab('toko')">
         <svg viewBox="0 0 24 24"><path d="M20 4H4v2h16V4zm1 10v-2l-1-5H4l-1 5v2h1v6h10v-6h4v6h2v-6h1z"/></svg>Toko
       </button>
-      <button class="nav-item" onclick="switchTab('cabang')">
+      <button class="nav-item" onclick="game.switchTab('cabang')">
         <svg viewBox="0 0 24 24"><path d="M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7z"/></svg>Cabang
       </button>
-      <button class="nav-item" onclick="switchTab('karyawan')">
+      <button class="nav-item" onclick="game.switchTab('karyawan')">
         <svg viewBox="0 0 24 24"><path d="M16 11c1.66 0 2.99-1.34 2.99-3S17.66 5 16 5c-1.66 0-3 1.34-3 3zm-8 0c1.66 0 2.99-1.34 2.99-3S9.66 5 8 5z"/></svg>Karyawan
       </button>
-      <button class="nav-item" onclick="switchTab('upgrade')">
+      <button class="nav-item" onclick="game.switchTab('upgrade')">
         <svg viewBox="0 0 24 24"><path d="M12 2l2.4 7.2h7.6l-6 4.8 2.4 7.2-6-4.8-6 4.8 2.4-7.2-6-4.8h7.6z"/></svg>Upgrade
+      </button>
+      <button class="nav-item" onclick="game.switchTab('review')">
+        <svg viewBox="0 0 24 24"><path d="M12 17.27L18.18 21l-1.64-7.03L22 9.24l-7.19-.61L12 2 9.19 8.63 2 9.24l5.46 4.73L5.82 21z"/></svg>Ulasan
       </button>
     </nav>
   </div>
 
   <script>
-    var state = {
-      balance: 5000000, level: 1, reputation: 50, day: 1, 
-      hour: 8, minute: 0,
-      todayBuyers: 0, todaySales: 0, speed: 1,
-      products: [
-        { id: 1, name: "Aqua 600ml", cost: 2500, price: 4000, basePrice: 4000, stock: 100 },
-        { id: 2, name: "Indomie Goreng", cost: 2500, price: 3500, basePrice: 3500, stock: 200 },
-        { id: 3, name: "Taro Net", cost: 5000, price: 8000, basePrice: 8000, stock: 50 },
-        { id: 4, name: "Chitato Sapi", cost: 8000, price: 12000, basePrice: 12000, stock: 40 },
-        { id: 5, name: "Ultra Milk 250ml", cost: 5000, price: 7500, basePrice: 7500, stock: 80 },
-        { id: 6, name: "Rokok Sampoerna", cost: 25000, price: 30000, basePrice: 30000, stock: 30 }
-      ],
-      employees: [],
-      cities: [
-        { id: 'jkt', name: "Jakarta", region: "DKI Jakarta", cost: 5000000, income: 450000, owned: true },
-        { id: 'sby', name: "Surabaya", region: "Jawa Timur", cost: 4000000, income: 350000, owned: false },
-        { id: 'bdg', name: "Bandung", region: "Jawa Barat", cost: 3500000, income: 300000, owned: false },
-        { id: 'mdn', name: "Medan", region: "Sumatera Utara", cost: 3000000, income: 250000, owned: false },
-        { id: 'mks', name: "Makassar", region: "Sulawesi Selatan", cost: 3000000, income: 250000, owned: false },
-        { id: 'smg', name: "Semarang", region: "Jawa Tengah", cost: 2800000, income: 220000, owned: false },
-        { id: 'dps', name: "Denpasar", region: "Bali", cost: 4500000, income: 400000, owned: false }
-      ],
-      upgrades: [
-        { id: 'rak', name: "Rak Tambahan (+Peluang Stok)", cost: 2000000, owned: false },
-        { id: 'kasir', name: "Kasir Otomatis (+Speed Pembayaran)", cost: 3000000, owned: false }
-      ],
-      franchises: [
-        { id: 'f1', name: "Franchise Kios Mini", cost: 15000000, royalty: 500000, owned: false },
-        { id: 'f2', name: "Franchise Super Store", cost: 35000000, royalty: 1200000, owned: false }
-      ],
-      logs: [], reviews: [], timerId: null
-    };
+    var game = (function() {
+      // Core State Object
+      var state = {
+        balance: 5000000,
+        level: 1,
+        reputation: 50,
+        day: 1,
+        hour: 8,
+        minute: 0,
+        todayBuyers: 0,
+        todaySales: 0,
+        speed: 1,
+        reviewFilter: 'all',
+        products: [
+          { id: 1, name: "Aqua 600ml", cost: 2500, price: 4000, basePrice: 4000, stock: 100 },
+          { id: 2, name: "Indomie Goreng", cost: 2500, price: 3500, basePrice: 3500, stock: 150 },
+          { id: 3, name: "Taro Net 36g", cost: 5000, price: 8000, basePrice: 8000, stock: 60 },
+          { id: 4, name: "Chitato Sapi Panggang", cost: 8000, price: 12000, basePrice: 12000, stock: 45 },
+          { id: 5, name: "Ultra Milk Cokelat 250ml", cost: 5000, price: 7500, basePrice: 7500, stock: 80 },
+          { id: 6, name: "Rokok Sampoerna Mild", cost: 26000, price: 32000, basePrice: 32000, stock: 30 },
+          { id: 7, name: "Teh Botol Sosro", cost: 3500, price: 5500, basePrice: 5500, stock: 90 },
+          { id: 8, name: "Roti Tawar Kupas", cost: 10000, price: 15000, basePrice: 15000, stock: 25 }
+        ],
+        employees: [],
+        cities: [
+          { id: 'jkt', name: "Jakarta", region: "DKI Jakarta", cost: 5000000, income: 450000, owned: true },
+          { id: 'sby', name: "Surabaya", region: "Jawa Timur", cost: 4000000, income: 350000, owned: false },
+          { id: 'bdg', name: "Bandung", region: "Jawa Barat", cost: 3500000, income: 300000, owned: false },
+          { id: 'mdn', name: "Medan", region: "Sumatera Utara", cost: 3000000, income: 250000, owned: false },
+          { id: 'mks', name: "Makassar", region: "Sulawesi Selatan", cost: 3000000, income: 250000, owned: false },
+          { id: 'smg', name: "Semarang", region: "Jawa Tengah", cost: 2800000, income: 220000, owned: false },
+          { id: 'dps', name: "Denpasar", region: "Bali", cost: 4500000, income: 400000, owned: false },
+          { id: 'yog', name: "Yogyakarta", region: "DI Yogyakarta", cost: 2700000, income: 210000, owned: false },
+          { id: 'plm', name: "Palembang", region: "Sumatera Selatan", cost: 2600000, income: 200000, owned: false },
+          { id: 'bkp', name: "Balikpapan", region: "Kaltim", cost: 3200000, income: 270000, owned: false }
+        ],
+        upgrades: [
+          { id: 'rak', name: "Rak Display Tambahan", desc: "Meningkatkan daya pikat produk", cost: 2000000, owned: false },
+          { id: 'kasir', name: "Sistem Kasir Otomatis", desc: "Transaksi checkout 30% lebih cepat", cost: 3500000, owned: false },
+          { id: 'ac', name: "Pendingin AC Dinding", desc: "Meningkatkan kepuasan pembeli", cost: 1800000, owned: false },
+          { id: 'cctv', name: "Kamera CCTV Pintar", desc: "Mencegah kerugian barang hilang", cost: 1500000, owned: false }
+        ],
+        franchises: [
+          { id: 'f1', name: "Waralaba IndoKios", cost: 15000000, royalty: 600000, owned: false },
+          { id: 'f2', name: "Waralaba IndoExpress", cost: 35000000, royalty: 1500000, owned: false },
+          { id: 'f3', name: "Waralaba IndoSuper", cost: 75000000, royalty: 3500000, owned: false }
+        ],
+        logs: [],
+        reviews: [],
+        timerId: null
+      };
 
-    var customerComments = {
-      expensive: ["Mahal banget woi!", "Mending beli di toko sebelah", "Harga tidak masuk akal!"],
-      outOfStock: ["Yah barangnya habis", "Toko segini gede persediaan kosong", "Kecewa stok gak ada"],
-      success: ["Mantap pelayanannya cepat!", "Langganan nih di sini", "Toko bersih, barang lengkap!"]
-    };
+      // Review templates
+      var netizenNames = ["Bambang S.", "Siti R.", "Rian P.", "Dewi K.", "Eko W.", "Lina M.", "Andi T.", "Nur H.", "Budi K.", "Fitri S."];
 
-    function formatRp(val) { return "Rp " + val.toLocaleString('id-ID'); }
+      var reviewTemplates = {
+        expensive: [
+          "Beli {item} di sini kemahalan banget woi! Mending ke tempat lain.",
+          "Harganya dinaikkan gila-gilaan untuk {item}. Kecewa berat!",
+          "Masa {item} harganya mahal banget? Auto kantong bolong beli di sini."
+        ],
+        outOfStock: [
+          "Mau beli {item} tapi stoknya selalu habis! Kecewa deh.",
+          "Minimarket kok barangnya kosong melompong ({item})?",
+          "Duh, nyari {item} kosong terus dari kemarin."
+        ],
+        normal: [
+          "Belanja {item} di sini cukup oke dan tempatnya lumayan bersih.",
+          "Harganya standar, stok {item} aman. Langganan terus.",
+          "Pelayanannya lumayan cepat dan lokasinya strategis."
+        ],
+        excellent: [
+          "Mantap banget! Tokonya dingin, kasirnya ramah, stok {item} melimpah!",
+          "Minimarket terbaik! Belanja {item} dapet pelayanan super cepat!",
+          "Suka banget belanja di sini, lengkap dan kasirnya cekatan sekali!"
+        ]
+      };
 
-    function init() {
-      loadGame();
-      renderAll();
-      startGameloop();
-    }
-
-    function startGameloop() {
-      if (state.timerId) clearInterval(state.timerId);
-      if (state.speed === 0) return;
-      
-      // 1 detik interval = 1 menit realtime game
-      var interval = 1000 / state.speed;
-      state.timerId = setInterval(function() {
-        state.minute += 1;
-        if (state.minute >= 60) {
-          state.minute = 0;
-          state.hour += 1;
-          if (state.hour >= 22) { 
-            nextDay(); 
-            state.hour = 8; 
-          }
-        }
-        
-        if (Math.random() < 0.4) {
-          spawnCustomer();
-        }
-        
-        renderHeader();
-      }, interval);
-    }
-
-    function spawnCustomer() {
-      var prod = state.products[Math.floor(Math.random() * state.products.length)];
-      var qty = Math.floor(Math.random() * 3) + 1;
-      var priceRatio = prod.price / prod.basePrice;
-
-      if (priceRatio > 1.3 && Math.random() < 0.7) {
-        addReview(getRandomComment('expensive') + " (" + prod.name + ")", 'bad');
-        state.reputation = Math.max(0, state.reputation - 0.5);
-        return;
+      function formatRp(val) {
+        return "Rp " + Math.floor(val).toLocaleString('id-ID');
       }
 
-      if (prod.stock >= qty) {
+      function showToast(message) {
+        var toast = document.getElementById('toast');
+        if (toast) {
+          toast.innerText = message;
+          toast.classList.add('show');
+          setTimeout(function() { toast.classList.remove('show'); }, 2200);
+        }
+      }
+
+      function startGameloop() {
+        if (state.timerId) clearInterval(state.timerId);
+        if (state.speed === 0) return;
+
+        var interval = 1000 / state.speed;
+        state.timerId = setInterval(function() {
+          state.minute += 1;
+          if (state.minute >= 60) {
+            state.minute = 0;
+            state.hour += 1;
+            if (state.hour >= 22) {
+              nextDay();
+              state.hour = 8;
+            }
+          }
+
+          if (Math.random() < 0.45) {
+            spawnCustomer();
+          }
+
+          renderHeader();
+        }, interval);
+      }
+
+      function spawnCustomer() {
+        var prod = state.products[Math.floor(Math.random() * state.products.length)];
+        var qty = Math.floor(Math.random() * 3) + 1;
+        var priceRatio = prod.price / prod.basePrice;
+        var author = netizenNames[Math.floor(Math.random() * netizenNames.length)];
+
+        // 1. Overpriced Condition
+        if (priceRatio > 1.3 && Math.random() < 0.7) {
+          var textExp = getRandomReview('expensive', prod.name);
+          addNetizenReview(author, textExp, Math.floor(Math.random() * 2) + 1); // Star 1-2
+          state.reputation = Math.max(0, state.reputation - 0.5);
+          renderDashboardStats();
+          return;
+        }
+
+        // 2. Out of Stock Condition
+        if (prod.stock < qty) {
+          var textStock = getRandomReview('outOfStock', prod.name);
+          addNetizenReview(author, textStock, Math.floor(Math.random() * 2) + 1); // Star 1-2
+          state.reputation = Math.max(0, state.reputation - 0.4);
+          renderDashboardStats();
+          return;
+        }
+
+        // 3. Successful Purchase
         prod.stock -= qty;
         var total = prod.price * qty;
         state.balance += total;
         state.todaySales += total;
         state.todayBuyers++;
-        addLog("Pembeli membeli " + prod.name + " (" + qty + "x) - " + formatRp(total), 'good');
-        if (Math.random() < 0.2) addReview(getRandomComment('success'), 'good');
-      } else {
-        addReview(getRandomComment('outOfStock') + " (" + prod.name + ")", 'bad');
-        state.reputation = Math.max(0, state.reputation - 0.5);
-      }
-      
-      var stockElem = document.getElementById('stock-' + prod.id);
-      if(stockElem) stockElem.innerText = prod.stock;
-      
-      renderDashboardStats();
-    }
 
-    function getRandomComment(type) {
-      return customerComments[type][Math.floor(Math.random() * customerComments[type].length)];
-    }
+        addLog("Membeli " + prod.name + " (" + qty + "x) - " + formatRp(total), 'good');
 
-    function addLog(msg, type) {
-      state.logs.unshift({ msg: msg, type: type });
-      if (state.logs.length > 20) state.logs.pop();
-      renderLogs();
-    }
+        // Review generation logic based on store conditions
+        if (Math.random() < 0.35) {
+          var hasEmployees = state.employees.length > 0;
+          var hasAc = state.upgrades.find(function(u){ return u.id === 'ac' && u.owned; });
 
-    function addReview(msg, type) {
-      var timeStr = (state.hour < 10 ? '0' : '') + state.hour + ":" + (state.minute < 10 ? '0' : '') + state.minute;
-      state.reviews.unshift({ msg: msg, type: type, time: timeStr });
-      if (state.reviews.length > 20) state.reviews.pop();
-      renderReviews();
-    }
-
-    function setSpeed(sp, btnElement) {
-      state.speed = sp;
-      document.querySelectorAll('.speed-btn').forEach(b => b.classList.remove('active'));
-      if(btnElement) btnElement.classList.add('active');
-      startGameloop();
-    }
-
-    function nextDay() {
-      state.day++;
-      var ownedBranches = state.cities.filter(c => c.owned);
-      var passiveIncome = ownedBranches.reduce((acc, c) => acc + c.income, 0);
-      var totalSalaries = state.employees.reduce((acc, e) => acc + e.salary, 0);
-
-      state.franchises.forEach(f => { if (f.owned) passiveIncome += f.royalty; });
-      
-      var netIncome = passiveIncome - totalSalaries;
-      state.balance += netIncome;
-
-      if (state.balance > state.level * 10000000) state.level++;
-
-      state.todayBuyers = 0; 
-      state.todaySales = 0;
-      addLog("Hari " + state.day + " dimulai. Pendapatan pasif: " + formatRp(passiveIncome) + " | Gaji: " + formatRp(totalSalaries), 'good');
-      saveGame();
-      renderDashboardStats();
-    }
-
-    function renderHeader() {
-      var h = state.hour < 10 ? '0' + state.hour : state.hour;
-      var m = state.minute < 10 ? '0' + state.minute : state.minute;
-      document.getElementById('time-display').innerText = h + ":" + m + " WIB | Hari " + state.day;
-    }
-
-    // FUNGSIONALITAS RUBAH HARGA
-    function changePrice(id, amount) {
-      var prod = state.products.find(p => p.id === id);
-      if (prod) {
-        prod.price = Math.max(500, prod.price + amount);
-        var inputElem = document.getElementById('input-price-' + id);
-        if(inputElem) inputElem.value = prod.price;
-        saveGame();
-      }
-    }
-
-    function updatePriceInput(id, val) {
-      var prod = state.products.find(p => p.id === id);
-      if (prod) {
-        var newPrice = parseInt(val);
-        if (!isNaN(newPrice) && newPrice > 0) {
-          prod.price = newPrice;
-        } else {
-          document.getElementById('input-price-' + id).value = prod.price;
+          if (hasEmployees || hasAc) {
+            var textExc = getRandomReview('excellent', prod.name);
+            addNetizenReview(author, textExc, 5); // 5 Stars
+            state.reputation = Math.min(100, state.reputation + 0.4);
+          } else {
+            var textNorm = getRandomReview('normal', prod.name);
+            addNetizenReview(author, textNorm, 4); // 4 Stars
+            state.reputation = Math.min(100, state.reputation + 0.2);
+          }
         }
-        saveGame();
-      }
-    }
 
-    // FUNGSIONALITAS TAMBAH STOK
-    function buyStock(id) {
-      var prod = state.products.find(p => p.id === id);
-      if (prod) {
-        var totalCost = prod.cost * 10;
-        if (state.balance >= totalCost) {
-          state.balance -= totalCost; 
-          prod.stock += 10;
-          
-          var stockElem = document.getElementById('stock-' + id);
-          if(stockElem) stockElem.innerText = prod.stock;
-          
-          addLog("Membeli stok 10x " + prod.name + " (" + formatRp(totalCost) + ")", 'good');
+        // Realtime Stock UI Update
+        var stockBadge = document.getElementById('stock-' + prod.id);
+        if (stockBadge) stockBadge.innerText = prod.stock;
+
+        renderDashboardStats();
+      }
+
+      function getRandomReview(type, itemName) {
+        var arr = reviewTemplates[type];
+        var text = arr[Math.floor(Math.random() * arr.length)];
+        return text.replace('{item}', itemName);
+      }
+
+      function addNetizenReview(author, text, rating) {
+        var h = state.hour < 10 ? '0' + state.hour : state.hour;
+        var m = state.minute < 10 ? '0' + state.minute : state.minute;
+        
+        state.reviews.unshift({
+          id: Date.now() + Math.random(),
+          author: author,
+          text: text,
+          rating: rating,
+          time: h + ":" + m + " WIB",
+          replied: false,
+          replyText: ""
+        });
+
+        if (state.reviews.length > 30) state.reviews.pop();
+        renderReviews();
+      }
+
+      function replyReview(reviewId) {
+        var rev = state.reviews.find(function(r) { return r.id === reviewId; });
+        if (!rev || rev.replied) return;
+
+        var cost = 100000; // Rp 100.000 customer service cost
+        if (state.balance < cost) {
+          showToast("Saldo tidak cukup untuk membalas ulasan!");
+          return;
+        }
+
+        state.balance -= cost;
+        rev.replied = true;
+        rev.replyText = "Halo " + rev.author + ", terima kasih atas masukannya! Kami telah memperbaiki layanan dan stok toko kami 🙏";
+        
+        // Restore store reputation
+        state.reputation = Math.min(100, state.reputation + 2);
+        
+        renderReviews();
+        renderDashboardStats();
+        saveGame();
+        showToast("Ulasan dibalas! Reputasi toko +2%");
+      }
+
+      function filterReviews(filterType, btnElem) {
+        state.reviewFilter = filterType;
+        document.querySelectorAll('.filter-btn').forEach(function(b) { b.classList.remove('active'); });
+        if (btnElem) btnElem.classList.add('active');
+        renderReviews();
+      }
+
+      function addLog(msg, type) {
+        state.logs.unshift({ msg: msg, type: type || '' });
+        if (state.logs.length > 25) state.logs.pop();
+        renderLogs();
+      }
+
+      function setSpeed(sp, btnElement) {
+        state.speed = sp;
+        document.querySelectorAll('.speed-btn').forEach(function(b) { b.classList.remove('active'); });
+        if (btnElement) btnElement.classList.add('active');
+        startGameloop();
+        showToast(sp === 0 ? "Game Di-pause" : "Kecepatan Game: " + sp + "x");
+      }
+
+      function nextDay() {
+        state.day++;
+        
+        var ownedBranches = state.cities.filter(function(c) { return c.owned; });
+        var passiveIncome = ownedBranches.reduce(function(acc, c) { return acc + c.income; }, 0);
+        var totalSalaries = state.employees.reduce(function(acc, e) { return acc + e.salary; }, 0);
+
+        state.franchises.forEach(function(f) {
+          if (f.owned) passiveIncome += f.royalty;
+        });
+
+        var netPassive = passiveIncome - totalSalaries;
+        state.balance += netPassive;
+
+        if (state.balance > state.level * 8000000) {
+          state.level++;
+          showToast("LEVEL UP! Sekarang Level " + state.level);
+        }
+
+        state.todayBuyers = 0;
+        state.todaySales = 0;
+        
+        addLog("Hari " + state.day + " dimulai. Hasil cabang: " + formatRp(passiveIncome) + " | Beban Gaji: " + formatRp(totalSalaries), 'good');
+        saveGame();
+        renderDashboardStats();
+      }
+
+      function changePrice(id, amount) {
+        var prod = state.products.find(function(p) { return p.id === id; });
+        if (prod) {
+          prod.price = Math.max(100, prod.price + amount);
+          var inputElem = document.getElementById('input-price-' + id);
+          if (inputElem) inputElem.value = prod.price;
+          saveGame();
+        }
+      }
+
+      function updatePriceInput(id, val) {
+        var prod = state.products.find(function(p) { return p.id === id; });
+        if (prod) {
+          var parsed = parseInt(val, 10);
+          if (!isNaN(parsed) && parsed > 0) {
+            prod.price = parsed;
+          } else {
+            document.getElementById('input-price-' + id).value = prod.price;
+          }
+          saveGame();
+        }
+      }
+
+      function buyStock(id) {
+        var prod = state.products.find(function(p) { return p.id === id; });
+        if (prod) {
+          var costTotal = prod.cost * 10;
+          if (state.balance >= costTotal) {
+            state.balance -= costTotal;
+            prod.stock += 10;
+
+            var stockBadge = document.getElementById('stock-' + id);
+            if (stockBadge) stockBadge.innerText = prod.stock;
+
+            addLog("Membeli stok 10x " + prod.name + " (" + formatRp(costTotal) + ")", 'good');
+            renderDashboardStats();
+            saveGame();
+            showToast("+10 Stok " + prod.name + " berhasil dibeli");
+          } else {
+            showToast("Saldo tidak cukup untuk membeli stok!");
+          }
+        }
+      }
+
+      function buyCity(id) {
+        var city = state.cities.find(function(c) { return c.id === id; });
+        if (!city || city.owned) return;
+
+        if (state.balance >= city.cost) {
+          state.balance -= city.cost;
+          city.owned = true;
+
+          addLog("Berhasil membuka cabang baru di " + city.name, 'good');
+          renderCities();
+          renderUpgrades();
           renderDashboardStats();
           saveGame();
+          showToast("Selamat! Cabang " + city.name + " resmi dibuka!");
         } else {
-          alert("Saldo Anda tidak mencukupi untuk membeli stok ini!");
+          showToast("Saldo kurang untuk membuka cabang " + city.name);
         }
       }
-    }
 
-    function buyCity(id) {
-      var c = state.cities.find(x => x.id === id);
-      if (!c) return;
-      if (c.owned) return alert("Cabang di kota ini sudah aktif!");
-      
-      if (state.balance >= c.cost) {
-        state.balance -= c.cost; 
-        c.owned = true; 
-        addLog("Berhasil membuka cabang baru di " + c.name, 'good');
-        renderCities();
-        renderUpgrades();
-        renderDashboardStats(); 
-        saveGame();
-        alert("Selamat! Cabang " + c.name + " (" + c.region + ") telah resmi dibuka!");
-      } else {
-        alert("Saldo Anda kurang untuk membuka cabang di " + c.name);
-      }
-    }
+      function buyUpgrade(id) {
+        var up = state.upgrades.find(function(u) { return u.id === id; });
+        if (!up || up.owned) return;
 
-    function renderDashboardStats() {
-      document.getElementById('balance').innerText = formatRp(state.balance);
-      document.getElementById('level').innerText = state.level;
-      document.getElementById('reputation').innerText = Math.floor(state.reputation);
-      document.getElementById('branch-count').innerText = state.cities.filter(c => c.owned).length;
-      document.getElementById('today-buyers').innerText = state.todayBuyers;
-      document.getElementById('today-sales').innerText = formatRp(state.todaySales);
-    }
-
-    function renderLogs() {
-      document.getElementById('activity-log').innerHTML = state.logs.map(l => `<div class="log-item ${l.type}">${l.msg}</div>`).join('');
-    }
-
-    function renderReviews() {
-      document.getElementById('review-list').innerHTML = state.reviews.map(r => `<div class="log-item ${r.type}"><b>[${r.time}]</b> "${r.msg}"</div>`).join('');
-    }
-
-    function renderProducts() {
-      var pList = document.getElementById('product-list');
-      if (pList) {
-        pList.innerHTML = state.products.map(p => `
-          <div class="card item-row">
-            <div>
-              <b>${p.name}</b><br>
-              <small style="color:#8A8A8A">Stok: <b id="stock-${p.id}">${p.stock}</b> | Modal: ${formatRp(p.cost)}</small>
-            </div>
-            <div style="display:flex; flex-direction:column; align-items:flex-end; gap:6px;">
-              <div class="price-control">
-                <button class="price-btn" onclick="changePrice(${p.id}, -500)">-</button>
-                <input type="number" id="input-price-${p.id}" value="${p.price}" onchange="updatePriceInput(${p.id}, this.value)">
-                <button class="price-btn" onclick="changePrice(${p.id}, 500)">+</button>
-              </div>
-              <button class="btn btn-sm" onclick="buyStock(${p.id})">+10 Stok (${formatRp(p.cost * 10)})</button>
-            </div>
-          </div>
-        `).join('');
-      }
-    }
-
-    function renderCities() {
-      var cList = document.getElementById('city-list');
-      if (cList) {
-        cList.innerHTML = state.cities.map(c => `
-          <div class="card item-row">
-            <div>
-              <b>${c.name}</b> <span class="tag">${c.region}</span><br>
-              <small style="color:#8A8A8A">Biaya: ${formatRp(c.cost)} | Hasil: +${formatRp(c.income)}/hari</small>
-            </div>
-            <button class="btn btn-sm" ${c.owned ? 'disabled' : ''} onclick="buyCity('${c.id}')">
-              ${c.owned ? 'Aktif' : 'Buka Cabang'}
-            </button>
-          </div>
-        `).join('');
-      }
-    }
-
-    function renderEmployees() {
-      var eList = document.getElementById('employee-list');
-      if (eList) {
-        eList.innerHTML = state.employees.map((e, idx) => `
-          <div class="card item-row">
-            <div><b>${e.name}</b> (${e.type})<br><small style="color:#8A8A8A">Gaji: ${formatRp(e.salary)}/hari | Level ${e.level}</small></div>
-            <div style="display:flex; gap:6px;">
-              <button class="btn btn-sm" onclick="upgradeEmployee(${idx})">Upgrade</button>
-              <button class="btn btn-sm btn-danger" onclick="fireEmployee(${idx})">Pecat</button>
-            </div>
-          </div>
-        `).join('');
-      }
-    }
-
-    function renderUpgrades() {
-      var uList = document.getElementById('upgrade-list');
-      if (uList) {
-        uList.innerHTML = state.upgrades.map(u => `
-          <div class="card item-row">
-            <div><b>${u.name}</b><br><small style="color:#8A8A8A">${formatRp(u.cost)}</small></div>
-            <button class="btn btn-sm" ${u.owned ? 'disabled' : ''} onclick="buyUpgrade('${u.id}')">${u.owned ? 'Milik' : 'Beli'}</button>
-          </div>
-        `).join('');
+        if (state.balance >= up.cost) {
+          state.balance -= up.cost;
+          up.owned = true;
+          renderUpgrades();
+          renderDashboardStats();
+          saveGame();
+          showToast("Upgrade " + up.name + " berhasil dipasang!");
+        } else {
+          showToast("Saldo Anda tidak mencukupi!");
+        }
       }
 
-      var fList = document.getElementById('franchise-section');
-      var ownedBranchesCount = state.cities.filter(c => c.owned).length;
-      
-      if (fList) {
+      function buyFranchise(id) {
+        var ownedBranchesCount = state.cities.filter(function(c) { return c.owned; }).length;
         if (ownedBranchesCount < 5) {
-          fList.innerHTML = `
-            <div class="locked-card">
-              <b>Fitur Franchise Terkunci!</b><br>
-              Syarat minimal: Memiliki <b>5 Cabang Kota</b>.<br>
-              (Saat ini Anda baru memiliki <b>${ownedBranchesCount}/5</b> Cabang)
-            </div>`;
+          showToast("Syarat minimal 5 Cabang Kota belum terpenuhi!");
+          return;
+        }
+
+        var fran = state.franchises.find(function(f) { return f.id === id; });
+        if (!fran) return;
+
+        if (state.balance >= fran.cost) {
+          state.balance -= fran.cost;
+          fran.owned = true;
+          renderUpgrades();
+          renderDashboardStats();
+          saveGame();
+          showToast("Lisensi " + fran.name + " berhasil dijual!");
         } else {
-          fList.innerHTML = state.franchises.map(f => `
-            <div class="card item-row">
-              <div><b>${f.name}</b><br><small style="color:#8A8A8A">Harga: ${formatRp(f.cost)} | Pasif: +${formatRp(f.royalty)}/hari</small></div>
-              <button class="btn btn-sm" ${f.owned ? 'disabled' : ''} onclick="buyFranchise('${f.id}')">${f.owned ? 'Aktif' : 'Beli Lisensi'}</button>
-            </div>
-          `).join('');
+          showToast("Saldo Anda tidak mencukupi!");
         }
       }
-    }
 
-    function renderAll() {
-      renderHeader();
-      renderDashboardStats();
-      renderProducts();
-      renderCities();
-      renderEmployees();
-      renderLogs();
-      renderReviews();
-      renderUpgrades();
-    }
+      function hireEmployee() {
+        if (state.balance < 500000) {
+          showToast("Saldo tidak cukup untuk rekrut karyawan!");
+          return;
+        }
+        state.balance -= 500000;
+        var names = ["Budi", "Siti", "Andi", "Rina", "Dedi", "Lina", "Eko", "Maya", "Rian", "Dewi"];
+        var types = ["Kasir", "Pramuniaga", "Supervisor"];
+        var type = types[Math.floor(Math.random() * types.length)];
+        var name = names[Math.floor(Math.random() * names.length)];
 
-    function hireEmployee() {
-      if (state.balance < 500000) return alert("Saldo tidak cukup!");
-      state.balance -= 500000;
-      var names = ["Budi", "Siti", "Andi", "Rina", "Dedi", "Lina", "Eko", "Maya"];
-      var types = ["Kasir", "Pramuniaga", "Supervisor"];
-      var type = types[Math.floor(Math.random() * types.length)];
-      state.employees.push({ name: names[Math.floor(Math.random() * names.length)], type: type, salary: 150000, level: 1 });
-      renderEmployees();
-      renderDashboardStats();
-      saveGame();
-    }
-
-    function fireEmployee(idx) { 
-      state.employees.splice(idx, 1); 
-      renderEmployees(); 
-      saveGame();
-    }
-
-    function upgradeEmployee(idx) {
-      var emp = state.employees[idx];
-      if (state.balance >= 300000) {
-        state.balance -= 300000; 
-        emp.level++; 
-        emp.salary += 50000; 
+        state.employees.push({ name: name, type: type, salary: 150000, level: 1 });
         renderEmployees();
         renderDashboardStats();
         saveGame();
-      } else alert("Saldo kurang!");
-    }
+        showToast("Berhasil merekrut " + name + " (" + type + ")");
+      }
 
-    function buyUpgrade(id) {
-      var up = state.upgrades.find(u => u.id === id);
-      if (state.balance >= up.cost) {
-        state.balance -= up.cost; 
-        up.owned = true; 
-        renderUpgrades();
-        renderDashboardStats();
-        saveGame();
-      } else alert("Saldo kurang!");
-    }
-
-    function buyFranchise(id) {
-      var f = state.franchises.find(x => x.id === id);
-      if (state.balance >= f.cost) {
-        state.balance -= f.cost; 
-        f.owned = true; 
-        renderUpgrades();
-        renderDashboardStats();
-        saveGame();
-      } else alert("Saldo kurang!");
-    }
-
-    function switchTab(tabId) {
-      document.querySelectorAll('.tab-content').forEach(t => t.classList.remove('active'));
-      document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
-      
-      var targetTab = document.getElementById('tab-' + tabId);
-      if(targetTab) targetTab.classList.add('active');
-      
-      var navBtns = document.querySelectorAll('.nav-item');
-      navBtns.forEach(btn => {
-        if (btn.getAttribute('onclick').includes(tabId)) {
-          btn.classList.add('active');
+      function fireEmployee(idx) {
+        var emp = state.employees[idx];
+        if (emp) {
+          state.employees.splice(idx, 1);
+          renderEmployees();
+          renderDashboardStats();
+          saveGame();
+          showToast("Karyawan " + emp.name + " telah diberhentikan.");
         }
-      });
-    }
+      }
 
-    function saveGame() { localStorage.setItem('indoManagerSave', JSON.stringify(state)); }
-    function loadGame() {
-      var saved = localStorage.getItem('indoManagerSave');
-      if (saved) { 
+      function upgradeEmployee(idx) {
+        var emp = state.employees[idx];
+        if (emp) {
+          if (state.balance >= 300000) {
+            state.balance -= 300000;
+            emp.level++;
+            emp.salary += 50000;
+            renderEmployees();
+            renderDashboardStats();
+            saveGame();
+            showToast("Level " + emp.name + " ditingkatkan!");
+          } else {
+            showToast("Saldo tidak cukup!");
+          }
+        }
+      }
+
+      function renderHeader() {
+        var h = state.hour < 10 ? '0' + state.hour : state.hour;
+        var m = state.minute < 10 ? '0' + state.minute : state.minute;
+        document.getElementById('time-display').innerText = h + ":" + m + " WIB | Hari " + state.day;
+      }
+
+      function renderDashboardStats() {
+        document.getElementById('balance').innerText = formatRp(state.balance);
+        document.getElementById('level').innerText = state.level;
+        document.getElementById('reputation').innerText = Math.floor(state.reputation) + "%";
+        
+        var ownedBranchesCount = state.cities.filter(function(c) { return c.owned; }).length;
+        document.getElementById('branch-count').innerText = ownedBranchesCount;
+        
+        document.getElementById('today-buyers').innerText = state.todayBuyers;
+        document.getElementById('today-sales').innerText = formatRp(state.todaySales);
+      }
+
+      function renderLogs() {
+        var logContainer = document.getElementById('activity-log');
+        if (!logContainer) return;
+        if (state.logs.length === 0) {
+          logContainer.innerHTML = '<div class="log-item">Belum ada aktivitas.</div>';
+          return;
+        }
+        logContainer.innerHTML = state.logs.map(function(l) {
+          return '<div class="log-item ' + l.type + '">' + l.msg + '</div>';
+        }).join('');
+      }
+
+      function renderReviews() {
+        var revContainer = document.getElementById('review-list');
+        if (!revContainer) return;
+
+        // Calculate Average Rating
+        var totalReviews = state.reviews.length;
+        var avgRating = totalReviews > 0 ? (state.reviews.reduce(function(a, b){ return a + b.rating; }, 0) / totalReviews).toFixed(1) : "5.0";
+        
+        document.getElementById('review-avg-rating').innerText = "⭐ " + avgRating + " / 5.0";
+        document.getElementById('review-total-count').innerText = totalReviews + " Ulasan";
+
+        // Filter Reviews
+        var filtered = state.reviews.filter(function(r) {
+          if (state.reviewFilter === 'positive') return r.rating >= 4;
+          if (state.reviewFilter === 'negative') return r.rating <= 3;
+          return true;
+        });
+
+        if (filtered.length === 0) {
+          revContainer.innerHTML = '<div class="card" style="text-align:center; color:var(--text-muted); font-size:13px;">Belum ada ulasan untuk kategori ini.</div>';
+          return;
+        }
+
+        revContainer.innerHTML = filtered.map(function(r) {
+          var starsStr = "★".repeat(r.rating) + "☆".repeat(5 - r.rating);
+          return `
+            <div class="review-card">
+              <div class="review-header">
+                <span class="review-author">${r.author} <small style="color:var(--text-muted); font-weight:normal;">• ${r.time}</small></span>
+                <span class="review-stars">${starsStr}</span>
+              </div>
+              <div class="review-text">${r.text}</div>
+              ${r.replied ? 
+                `<div class="review-reply"><b>Tanggapan Toko:</b> ${r.replyText}</div>` : 
+                `<button class="btn btn-sm btn-secondary" style="font-size:11px; padding:4px 10px;" onclick="game.replyReview(${r.id})">💬 Balas Ulasan (Rp 100.000)</button>`
+              }
+            </div>
+          `;
+        }).join('');
+      }
+
+      function renderProducts() {
+        var pList = document.getElementById('product-list');
+        if (!pList) return;
+        pList.innerHTML = state.products.map(function(p) {
+          return `
+            <div class="card item-row">
+              <div style="flex: 1; padding-right: 10px;">
+                <b style="font-size: 14px; color: var(--text);">${p.name}</b><br>
+                <small style="color: var(--text-muted);">
+                  Stok: <b id="stock-${p.id}" style="color:var(--primary-dark);">${p.stock}</b> | Modal: ${formatRp(p.cost)}
+                </small>
+              </div>
+              <div style="display: flex; flex-direction: column; align-items: flex-end; gap: 6px;">
+                <div class="price-control">
+                  <button class="price-btn" onclick="game.changePrice(${p.id}, -500)">-</button>
+                  <input type="number" id="input-price-${p.id}" value="${p.price}" onchange="game.updatePriceInput(${p.id}, this.value)">
+                  <button class="price-btn" onclick="game.changePrice(${p.id}, 500)">+</button>
+                </div>
+                <button class="btn btn-sm" onclick="game.buyStock(${p.id})">+10 Stok (${formatRp(p.cost * 10)})</button>
+              </div>
+            </div>
+          `;
+        }).join('');
+      }
+
+      function renderCities() {
+        var cList = document.getElementById('city-list');
+        if (!cList) return;
+        cList.innerHTML = state.cities.map(function(c) {
+          return `
+            <div class="card item-row">
+              <div>
+                <div style="display:flex; align-items:center; gap:6px; margin-bottom:2px;">
+                  <b style="font-size: 14px;">${c.name}</b>
+                  <span class="tag ${c.owned ? '' : 'tag-disabled'}">${c.region}</span>
+                </div>
+                <small style="color: var(--text-muted);">
+                  Biaya: ${formatRp(c.cost)} | Hasil: +${formatRp(c.income)}/hari
+                </small>
+              </div>
+              <button class="btn btn-sm ${c.owned ? 'btn-secondary' : ''}" ${c.owned ? 'disabled' : ''} onclick="game.buyCity('${c.id}')">
+                ${c.owned ? 'Aktif (Milik Anda)' : 'Buka Cabang'}
+              </button>
+            </div>
+          `;
+        }).join('');
+      }
+
+      function renderEmployees() {
+        var eList = document.getElementById('employee-list');
+        if (!eList) return;
+        if (state.employees.length === 0) {
+          eList.innerHTML = '<div class="card" style="text-align:center; color:var(--text-muted); font-size:13px;">Belum ada karyawan. Rekrut sekarang untuk performa maksimal!</div>';
+          return;
+        }
+        eList.innerHTML = state.employees.map(function(e, idx) {
+          return `
+            <div class="card item-row">
+              <div>
+                <b style="font-size: 14px;">${e.name}</b> <span class="tag">${e.type}</span><br>
+                <small style="color: var(--text-muted);">
+                  Gaji: ${formatRp(e.salary)}/hari | Level ${e.level}
+                </small>
+              </div>
+              <div style="display: flex; gap: 6px;">
+                <button class="btn btn-sm btn-secondary" onclick="game.upgradeEmployee(${idx})">Upgrade</button>
+                <button class="btn btn-sm btn-danger" onclick="game.fireEmployee(${idx})">Pecat</button>
+              </div>
+            </div>
+          `;
+        }).join('');
+      }
+
+      function renderUpgrades() {
+        var uList = document.getElementById('upgrade-list');
+        if (uList) {
+          uList.innerHTML = state.upgrades.map(function(u) {
+            return `
+              <div class="card item-row">
+                <div>
+                  <b style="font-size: 14px;">${u.name}</b><br>
+                  <small style="color: var(--text-muted);">${u.desc} — <b>${formatRp(u.cost)}</b></small>
+                </div>
+                <button class="btn btn-sm ${u.owned ? 'btn-secondary' : ''}" ${u.owned ? 'disabled' : ''} onclick="game.buyUpgrade('${u.id}')">
+                  ${u.owned ? 'Terpasang' : 'Beli Upgrade'}
+                </button>
+              </div>
+            `;
+          }).join('');
+        }
+
+        var fList = document.getElementById('franchise-section');
+        var ownedBranchesCount = state.cities.filter(function(c) { return c.owned; }).length;
+
+        if (fList) {
+          if (ownedBranchesCount < 5) {
+            fList.innerHTML = `
+              <div class="locked-card">
+                <b style="font-size: 14px;">🔒 Kemitraan Franchise Terkunci!</b><br>
+                Syarat Pembukaan: Memiliki minimal <b>5 Cabang Kota</b> di Indonesia.<br>
+                Progress saat ini: <b>${ownedBranchesCount} / 5 Cabang</b>
+              </div>`;
+          } else {
+            fList.innerHTML = state.franchises.map(function(f) {
+              return `
+                <div class="card item-row">
+                  <div>
+                    <b style="font-size: 14px;">${f.name}</b><br>
+                    <small style="color: var(--text-muted);">Harga Lisensi: ${formatRp(f.cost)} | Royalti: +${formatRp(f.royalty)}/hari</small>
+                  </div>
+                  <button class="btn btn-sm ${f.owned ? 'btn-secondary' : ''}" ${f.owned ? 'disabled' : ''} onclick="game.buyFranchise('${f.id}')">
+                    ${f.owned ? 'Lisensi Aktif' : 'Jual Lisensi'}
+                  </button>
+                </div>
+              `;
+            }).join('');
+          }
+        }
+      }
+
+      function renderAll() {
+        renderHeader();
+        renderDashboardStats();
+        renderProducts();
+        renderCities();
+        renderEmployees();
+        renderUpgrades();
+        renderLogs();
+        renderReviews();
+      }
+
+      function switchTab(tabId) {
+        document.querySelectorAll('.tab-content').forEach(function(t) { t.classList.remove('active'); });
+        document.querySelectorAll('.nav-item').forEach(function(n) { n.classList.remove('active'); });
+
+        var targetTab = document.getElementById('tab-' + tabId);
+        if (targetTab) targetTab.classList.add('active');
+
+        var navBtns = document.querySelectorAll('.nav-item');
+        navBtns.forEach(function(btn) {
+          if (btn.getAttribute('onclick') && btn.getAttribute('onclick').includes(tabId)) {
+            btn.classList.add('active');
+          }
+        });
+      }
+
+      function saveGame() {
         try {
-          var obj = JSON.parse(saved); 
-          Object.assign(state, obj); 
+          localStorage.setItem('indoManager_v3', JSON.stringify(state));
         } catch(e){}
       }
-    }
+
+      function loadGame() {
+        try {
+          var saved = localStorage.getItem('indoManager_v3');
+          if (saved) {
+            var parsed = JSON.parse(saved);
+            Object.assign(state, parsed);
+          }
+        } catch(e){}
+      }
+
+      function init() {
+        loadGame();
+        renderAll();
+        startGameloop();
+      }
+
+      return {
+        init: init,
+        setSpeed: setSpeed,
+        nextDay: nextDay,
+        changePrice: changePrice,
+        updatePriceInput: updatePriceInput,
+        buyStock: buyStock,
+        buyCity: buyCity,
+        buyUpgrade: buyUpgrade,
+        buyFranchise: buyFranchise,
+        hireEmployee: hireEmployee,
+        fireEmployee: fireEmployee,
+        upgradeEmployee: upgradeEmployee,
+        replyReview: replyReview,
+        filterReviews: filterReviews,
+        switchTab: switchTab
+      };
+    })();
 
     document.addEventListener("DOMContentLoaded", function() {
-      init();
+      game.init();
     });
   </script>
 </body>
