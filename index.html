@@ -33,6 +33,7 @@
     .speed-btn.active { background: #00B14F; color: white; border-color: #00B14F; }
     .item-row { display: flex; justify-content: space-between; align-items: center; padding: 10px 0; border-bottom: 1px solid #F5F5F5; }
     .btn { background: #00B14F; color: white; border: none; padding: 8px 14px; border-radius: 8px; font-weight: 600; cursor: pointer; font-size: 13px; }
+    .btn-sm { padding: 4px 8px; font-size: 12px; border-radius: 6px; }
     .btn-danger { background: #E63946; }
     .btn-secondary { background: #F5F5F5; color: #1A1A1A; border: 1px solid #E5E5E5; }
     .btn:disabled { opacity: 0.5; cursor: not-allowed; }
@@ -41,7 +42,12 @@
     .log-item { padding: 6px 0; border-bottom: 1px solid #F5F5F5; color: #8A8A8A; }
     .log-item.good { color: #00880A; }
     .log-item.bad { color: #E63946; }
-    input[type="number"] { width: 90px; padding: 6px; border: 1px solid #E5E5E5; border-radius: 6px; }
+    
+    /* Price Adjuster Controls */
+    .price-control { display: flex; align-items: center; gap: 4px; }
+    .price-control input { width: 85px; padding: 6px; border: 1px solid #E5E5E5; border-radius: 6px; text-align: center; font-weight: 600; }
+    .price-btn { width: 28px; height: 28px; background: #E8F7EE; color: #00880A; border: 1px solid #00B14F; border-radius: 6px; font-weight: bold; cursor: pointer; display: flex; align-items: center; justify-content: center; }
+    
     .locked-card { opacity: 0.6; background: #F5F5F5; text-align: center; padding: 30px 16px; border-radius: 12px; }
   </style>
 </head>
@@ -52,7 +58,7 @@
         <div class="avatar">M</div>
         <div>
           <div style="font-weight: 600; font-size: 14px;">Selamat Datang, Manager</div>
-          <div style="font-size: 12px; color: #8A8A8A;" id="time-display">08:00 WIB | Hari 1</div>
+          <div style="font-size: 12px; color: #8A8A8A;" id="time-display">08:00:00 WIB | Hari 1</div>
         </div>
       </div>
       <button class="btn" onclick="nextDay()" style="padding: 6px 12px;">›› Skip Hari</button>
@@ -111,7 +117,7 @@
     <!-- TOKO -->
     <div id="tab-toko" class="tab-content">
       <h3>Stok & Dynamic Pricing</h3>
-      <p style="font-size: 12px; color: #8A8A8A; margin-bottom: 12px;">Atur harga jual sesuai keinginan. Harga terlalu mahal membuat pembeli kabur.</p>
+      <p style="font-size: 12px; color: #8A8A8A; margin-bottom: 12px;">Gunakan tombol -/+ atau ketik angka untuk mengubah harga jual.</p>
       <div id="product-list"></div>
     </div>
 
@@ -168,7 +174,8 @@
   <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
   <script>
     var state = {
-      balance: 5000000, level: 1, reputation: 50, day: 1, hour: 8, minute: 0,
+      balance: 5000000, level: 1, reputation: 50, day: 1, 
+      hour: 8, minute: 0, second: 0,
       todayBuyers: 0, todaySales: 0, speed: 1,
       products: [
         { id: 1, name: "Aqua 600ml", cost: 2500, price: 4000, basePrice: 4000, stock: 100 },
@@ -212,22 +219,29 @@
       startGameloop();
     }
 
+    // Jam Real-Time per Detik
     function startGameloop() {
       if (state.timerId) clearInterval(state.timerId);
       if (state.speed === 0) return;
       
       var interval = 1000 / state.speed;
       state.timerId = setInterval(function() {
-        state.minute += 10;
-        if (state.minute >= 60) {
-          state.minute = 0;
-          state.hour++;
-          if (state.hour >= 22) { 
-            nextDay(); 
-            state.hour = 8; 
+        // Setiap detik bertambah 5 detik game agar tidak terlalu lambat
+        state.second += 5;
+        if (state.second >= 60) {
+          state.second = 0;
+          state.minute += 1;
+          if (state.minute >= 60) {
+            state.minute = 0;
+            state.hour += 1;
+            if (state.hour >= 22) { 
+              nextDay(); 
+              state.hour = 8; 
+            }
           }
+          // Pelanggan datang secara acak tiap menit berganti
+          if (Math.random() < 0.4) spawnCustomer();
         }
-        spawnCustomer();
         renderHeader();
       }, interval);
     }
@@ -269,7 +283,8 @@
     }
 
     function addReview(msg, type) {
-      state.reviews.unshift({ msg: msg, type: type, time: (state.hour < 10 ? '0' : '') + state.hour + ":" + (state.minute === 0 ? '00' : state.minute) });
+      var timeStr = (state.hour < 10 ? '0' : '') + state.hour + ":" + (state.minute < 10 ? '0' : '') + state.minute;
+      state.reviews.unshift({ msg: msg, type: type, time: timeStr });
       if (state.reviews.length > 30) state.reviews.pop();
     }
 
@@ -299,7 +314,29 @@
     }
 
     function renderHeader() {
-      document.getElementById('time-display').innerText = (state.hour < 10 ? '0' : '') + state.hour + ":" + (state.minute === 0 ? '00' : state.minute) + " WIB | Hari " + state.day;
+      var h = state.hour < 10 ? '0' + state.hour : state.hour;
+      var m = state.minute < 10 ? '0' + state.minute : state.minute;
+      var s = state.second < 10 ? '0' + state.second : state.second;
+      document.getElementById('time-display').innerText = h + ":" + m + ":" + s + " WIB | Hari " + state.day;
+    }
+
+    // Fungsi Pengaturan Harga (Tambah & Kurang)
+    function changePrice(id, amount) {
+      var prod = state.products.find(p => p.id === id);
+      if (prod) {
+        prod.price = Math.max(500, prod.price + amount);
+        renderAll();
+      }
+    }
+
+    function updatePriceInput(id, val) {
+      var prod = state.products.find(p => p.id === id);
+      if (prod) {
+        var newPrice = parseInt(val);
+        if (!isNaN(newPrice) && newPrice > 0) {
+          prod.price = newPrice;
+        }
+      }
     }
 
     function renderAll() {
@@ -311,7 +348,7 @@
       document.getElementById('today-buyers').innerText = state.todayBuyers;
       document.getElementById('today-sales').innerText = formatRp(state.todaySales);
 
-      // Products
+      // Products (Lengkap dengan Tombol +/- dan Input)
       var pList = document.getElementById('product-list');
       if (pList) {
         pList.innerHTML = state.products.map(p => `
@@ -320,9 +357,13 @@
               <b>${p.name}</b><br>
               <small style="color:#8A8A8A">Stok: ${p.stock} | Modal: ${formatRp(p.cost)}</small>
             </div>
-            <div style="display:flex; gap:8px; align-items:center;">
-              <input type="number" value="${p.price}" onchange="updatePrice(${p.id}, this.value)">
-              <button class="btn" onclick="buyStock(${p.id})">+10 Stok</button>
+            <div style="display:flex; flex-direction:column; align-items:flex-end; gap:6px;">
+              <div class="price-control">
+                <button class="price-btn" onclick="changePrice(${p.id}, -500)">-</button>
+                <input type="number" value="${p.price}" onchange="updatePriceInput(${p.id}, this.value)">
+                <button class="price-btn" onclick="changePrice(${p.id}, 500)">+</button>
+              </div>
+              <button class="btn btn-sm" onclick="buyStock(${p.id})">+10 Stok (${formatRp(p.cost * 10)})</button>
             </div>
           </div>
         `).join('');
@@ -335,8 +376,8 @@
           <div class="card item-row">
             <div><b>${e.name}</b> (${e.type})<br><small style="color:#8A8A8A">Gaji: ${formatRp(e.salary)}/hari | Lvl ${e.level}</small></div>
             <div style="display:flex; gap:6px;">
-              <button class="btn" onclick="upgradeEmployee(${idx})">Upgrade</button>
-              <button class="btn btn-danger" onclick="fireEmployee(${idx})">Pecat</button>
+              <button class="btn btn-sm" onclick="upgradeEmployee(${idx})">Upgrade</button>
+              <button class="btn btn-sm btn-danger" onclick="fireEmployee(${idx})">Pecat</button>
             </div>
           </div>
         `).join('');
@@ -352,7 +393,7 @@
         uList.innerHTML = state.upgrades.map(u => `
           <div class="card item-row">
             <div><b>${u.name}</b><br><small style="color:#8A8A8A">${formatRp(u.cost)}</small></div>
-            <button class="btn" ${u.owned ? 'disabled' : ''} onclick="buyUpgrade('${u.id}')">${u.owned ? 'Milik' : 'Beli'}</button>
+            <button class="btn btn-sm" ${u.owned ? 'disabled' : ''} onclick="buyUpgrade('${u.id}')">${u.owned ? 'Milik' : 'Beli'}</button>
           </div>
         `).join('');
       }
@@ -365,7 +406,7 @@
           fList.innerHTML = state.franchises.map(f => `
             <div class="card item-row">
               <div><b>${f.name}</b><br><small style="color:#8A8A8A">Harga: ${formatRp(f.cost)} | Pasif: +${formatRp(f.royalty)}/hari</small></div>
-              <button class="btn" ${f.owned ? 'disabled' : ''} onclick="buyFranchise('${f.id}')">${f.owned ? 'Aktif' : 'Beli Lisensi'}</button>
+              <button class="btn btn-sm" ${f.owned ? 'disabled' : ''} onclick="buyFranchise('${f.id}')">${f.owned ? 'Aktif' : 'Beli Lisensi'}</button>
             </div>
           `).join('');
         }
@@ -378,11 +419,6 @@
       if (state.balance >= cost) {
         state.balance -= cost; prod.stock += 10; renderAll();
       } else alert("Saldo tidak cukup!");
-    }
-
-    function updatePrice(id, val) {
-      var prod = state.products.find(p => p.id === id);
-      prod.price = parseInt(val) || prod.basePrice;
     }
 
     function hireEmployee() {
@@ -423,7 +459,6 @@
       document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
       document.getElementById('tab-' + tabId).classList.add('active');
       
-      // Update tombol aktif di bottom nav
       var navBtns = document.querySelectorAll('.nav-item');
       navBtns.forEach(btn => {
         if (btn.getAttribute('onclick').includes(tabId)) {
@@ -444,7 +479,7 @@
       
       state.cities.forEach(c => {
         L.marker([c.lat, c.lng]).addTo(state.map)
-          .bindPopup(`<b>${c.name}</b><br>Biaya: ${formatRp(c.cost)}<br><br><button class="btn" onclick="buyCity('${c.id}')">Buka Cabang</button>`);
+          .bindPopup(`<b>${c.name}</b><br>Biaya: ${formatRp(c.cost)}<br><br><button class="btn btn-sm" onclick="buyCity('${c.id}')">Buka Cabang</button>`);
       });
     }
 
